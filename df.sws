@@ -1,0 +1,9 @@
+[Properties]
+Version=26.0
+[WorkspacePaths]
+ConfigFile=.\Programs\Config.ws
+[Projects]
+Project0=ThriftlySample.src
+[Conditionals]
+Is$WebApp=False
+Is$Win64=True
