@@ -1,0 +1,14 @@
+[Header]
+Mask=*.src;*.vw;*.sl;*.dg;*.rv;*.bp;*.pkg;*.wo;*.dd;*.inc;*.tpl;*.dfo;*.asp;*.asa;*.html;*.css;*.js
+Active=0
+SubDirectories=1
+WholeWordOnly=0
+RegularExpression=0
+SearchWhere=0
+Location=C:\Users\marce\OneDrive\Documentos\Thriftly Developer\Dataflex\Library_x64\IdeSrc\marce_FindInFiles.dsk
+[C:\Users\marce\OneDrive\Documentos\Thriftly Developer\Dataflex\Library_x64\AppSrc]
+IsEnabled=1
+[C:\Users\marce\OneDrive\Documentos\Thriftly Developer\Dataflex\Library_x64\DDSrc]
+IsEnabled=1
+[C:\Users\marce\OneDrive\Documentos\Thriftly Developer\Dataflex\Library_x64\AppHtml]
+IsEnabled=1

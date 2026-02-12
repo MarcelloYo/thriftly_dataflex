@@ -1,0 +1,63 @@
+[Workspace]
+CurrentProject=ThriftlySample.src
+Location=C:\Users\marce\OneDrive\Documentos\Thriftly Developer\Dataflex\Library_x64\IdeSrc\marce_Studio.dsk
+CreateNew=-1
+[TabWindows]
+GroupCount=1
+HorizontalGroups=1
+[TabGroup0]
+GroupSize=40
+SelectedTab=4
+[Window0]
+Filename=C:\Users\marce\OneDrive\Documentos\Thriftly Developer\Dataflex\Library_x64\AppSrc\cThriftlyService.pkg
+ViewType=1
+Top=31
+Left=0
+Bottom=1028
+Right=1830
+CursorLine=292
+CursorColumn=0
+TabIndex=1
+TabGroup=0
+[Window1]
+Filename=C:\Users\marce\OneDrive\Documentos\Thriftly Developer\Dataflex\Library_x64\AppSrc\PrimitivesService.pkg
+ViewType=1
+Top=31
+Left=0
+Bottom=1028
+Right=1830
+CursorLine=39
+CursorColumn=22
+TabIndex=2
+TabGroup=0
+[Window2]
+Filename=C:\Users\marce\OneDrive\Documentos\Thriftly Developer\Dataflex\Library_x64\AppSrc\ThriftlyCommands.pkg
+ViewType=1
+Top=31
+Left=0
+Bottom=1028
+Right=1830
+CursorLine=6
+CursorColumn=0
+TabIndex=3
+TabGroup=0
+[Window3]
+Filename=C:\Users\marce\OneDrive\Documentos\Thriftly Developer\Dataflex\Library_x64\AppSrc\ThriftlySample.src
+ViewType=1
+Top=31
+Left=0
+Bottom=1028
+Right=1830
+CursorLine=9
+CursorColumn=22
+TabIndex=0
+TabGroup=0
+[Window4]
+Filename=Package Manager
+ViewType=104
+Top=31
+Left=0
+Bottom=1028
+Right=1830
+TabIndex=4
+TabGroup=0
