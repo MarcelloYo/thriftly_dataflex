@@ -1,0 +1,1332 @@
+// DataFlex COM proxy classes generated from C:\Program Files (x86)\Thriftly Developer\bin\Thriftly.Interface.dll
+Use FlexCom20.pkg
+
+Define OLEEVO_TYPES for Integer
+    Define OLEEVO_SCALAR for 1
+    Define OLEEVO_STRUCT for 12
+    Define OLEEVO_MAP for 13
+    Define OLEEVO_SET for 14
+    Define OLEEVO_LIST for 15
+
+Define OLEEVO_VISIBILITY for Integer
+    Define OLEEVO_PUBLIC for 1
+    Define OLEEVO_PRIVATE for 2
+
+Define OLEEVO_FIELD_FLAGS for Integer
+    Define OLEEVO_FIELD_DEFAULT for 0
+    Define OLEEVO_FIELD_REQUIRED for 1
+
+Define OLEEVO_METHOD_FLAGS for Integer
+    Define OLEEVO_METHOD_DEFAULT for 0
+    Define OLEEVO_METHOD_ONEWAY for 1
+    Define OLEEVO_METHOD_AUTH for 2
+    Define OLEEVO_METHOD_UNSECURED for 4
+    Define OLEEVO_METHOD_LOGIN for 8
+
+Define OLEEVO_SCALARS for Integer
+    Define OLEEVO_BOOL for 2
+    Define OLEEVO_BYTE for 3
+    Define OLEEVO_I16 for 6
+    Define OLEEVO_I32 for 8
+    Define OLEEVO_I64 for 10
+    Define OLEEVO_DOUBLE for 4
+    Define OLEEVO_STRING for 11
+    Define OLEEVO_DATE for 1001
+    Define OLEEVO_DATETIME for 1002
+    Define OLEEVO_BINARY for 1003
+    Define OLEEVO_DECIMAL for 1004
+
+Define OLEEVO_MARSHALING_MODES for Integer
+    Define OLEEVO_RECORDS_AND_ARRAYS for 17
+    Define OLEEVO_OBJECTS_AND_COLLECTIONS for 34
+
+Define OLEEVO_TRANSPORTS for Integer
+    Define OLEEVO_TRANSPORT_FRAMED for 1
+    Define OLEEVO_TRANSPORT_HTTP for 2
+    Define OLEEVO_TRANSPORT_GRPC for 3
+
+Define OLEEVO_PROTOCOLS for Integer
+    Define OLEEVO_THRIFT_BINARY for 1
+    Define OLEEVO_THRIFT_COMPACT for 2
+    Define OLEEVO_JSON_RPC for 3
+    Define OLEEVO_SOAP for 4
+    Define OLEEVO_JSON_REST for 5
+    Define OLEEVO_PROTOBUF for 6
+
+Define OLEEVO_ENCODINGS for Integer
+    Define OLEEVO_ENCODING_UTF8 for 1
+    Define OLEEVO_ENCODING_ANSI for 2
+
+//Struct GUID
+    //UInteger Data1
+    //UShort Data2
+    //UShort Data3
+    // Data4  // Bad type member
+//End_Struct
+
+// CLSID: {DF66E45F-43E0-4EE0-B28B-C7750F3C1C10}
+Class cComIEvoInterface is a Mixin
+
+    Function ComNewType Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 1 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    Function ComNewStruct Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 2 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    Function ComNewService Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 3 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+End_Class
+
+// CoClass
+// CLSID: {4212868E-6850-4E20-BDCE-22EA2BAAA0E8}
+Class cComEvoInterface is a cComAutomationObject
+    Import_Class_Protocol cComIEvoInterface
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+        Set psProgID to "{4212868E-6850-4E20-BDCE-22EA2BAAA0E8}"
+        Set peAutoCreate to acNoAutoCreate
+    End_Procedure
+End_Class
+
+// CLSID: {A809FD17-49C0-4F9C-8007-38D17E38D19D}
+Class cComIEvoServiceRuntime is a Mixin
+
+    { MethodType=Property DesignTime=False }
+    Function ComService Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 1 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Procedure Set ComService Variant value
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 1
+        Set ComProperty of hDispatchDriver 1 OLE_VT_DISPATCH to value
+    End_Procedure
+
+    { MethodType=Property DesignTime=False }
+    Function ComRuntime Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 5 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    Function ComWrap Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 6 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+End_Class
+
+// CLSID: {4C009192-DF3D-4403-BF21-C027A8FD9702}
+Class cCom_EvoRuntimeEvents is a Mixin
+
+    { Visibility=Private }
+    Procedure RegisterComEvents
+    End_Procedure
+End_Class
+
+// CoClass
+// CLSID: {24CBD848-6CEF-4E8F-B714-7A0B23976272}
+Class cComEvoServiceRuntime is a cComAutomationObject
+    Import_Class_Protocol cComIEvoServiceRuntime
+    Import_Class_Protocol cCom_EvoRuntimeEvents
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+        Set psProgID to "{24CBD848-6CEF-4E8F-B714-7A0B23976272}"
+        Set psEventId to "{4C009192-DF3D-4403-BF21-C027A8FD9702}"
+        Set peAutoCreate to acNoAutoCreate
+    End_Procedure
+End_Class
+
+// CLSID: {136F28D3-20DD-4771-BD36-264D75CEA2B4}
+Class cComIEvoSimpleServer is a Mixin
+
+    Procedure ComStart Variant llServices OLEEVO_MARSHALING_MODES llmode
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 2
+        Send DefineParam to hDispatchDriver OLE_VT_DISPATCH llServices
+        Send DefineParam to hDispatchDriver OLE_VT_I4 llmode
+        Send InvokeComMethod to hDispatchDriver 1 OLE_VT_VOID
+    End_Procedure
+
+    Procedure ComStop
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send InvokeComMethod to hDispatchDriver 2 OLE_VT_VOID
+    End_Procedure
+
+    { MethodType=Property DesignTime=False }
+    Function ComIsConnected Returns Boolean
+        Handle hDispatchDriver
+        Boolean retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 3 OLE_VT_BOOL to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComSettings Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 4 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+End_Class
+
+// CoClass
+// CLSID: {D546307E-2E2A-4B98-B230-4BD658C20C90}
+Class cComEvoSimpleServer is a cComAutomationObject
+    Import_Class_Protocol cComIEvoSimpleServer
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+        Set psProgID to "{D546307E-2E2A-4B98-B230-4BD658C20C90}"
+        Set peAutoCreate to acNoAutoCreate
+    End_Procedure
+End_Class
+
+// CLSID: {3942D3E7-4EE5-4BAE-9FAD-02938CC05E44}
+Class cComIEvoConsoleConnection is a Mixin
+
+    Procedure ComConnect Variant llServices OLEEVO_MARSHALING_MODES llmode
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 2
+        Send DefineParam to hDispatchDriver OLE_VT_DISPATCH llServices
+        Send DefineParam to hDispatchDriver OLE_VT_I4 llmode
+        Send InvokeComMethod to hDispatchDriver 1 OLE_VT_VOID
+    End_Procedure
+
+    Procedure ComDisconnect
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send InvokeComMethod to hDispatchDriver 2 OLE_VT_VOID
+    End_Procedure
+
+    { MethodType=Property DesignTime=False }
+    Function ComIsConnected Returns Boolean
+        Handle hDispatchDriver
+        Boolean retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 3 OLE_VT_BOOL to retVal
+        Function_Return retVal
+    End_Function
+End_Class
+
+// CoClass
+// CLSID: {50065F68-C59A-42A9-A1A8-6F3AAE9F3D26}
+Class cComEvoConsoleConnection is a cComAutomationObject
+    Import_Class_Protocol cComIEvoConsoleConnection
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+        Set psProgID to "{50065F68-C59A-42A9-A1A8-6F3AAE9F3D26}"
+        Set peAutoCreate to acNoAutoCreate
+    End_Procedure
+End_Class
+
+// CLSID: {EA0D8C17-9891-444D-B55E-BA86E7DF6E7F}
+Class cComIEvoDispatchConnection is a Mixin
+
+    Procedure ComConnect Variant llServices OLEEVO_MARSHALING_MODES llmode
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 2
+        Send DefineParam to hDispatchDriver OLE_VT_DISPATCH llServices
+        Send DefineParam to hDispatchDriver OLE_VT_I4 llmode
+        Send InvokeComMethod to hDispatchDriver 1 OLE_VT_VOID
+    End_Procedure
+
+    Procedure ComDisconnect
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send InvokeComMethod to hDispatchDriver 2 OLE_VT_VOID
+    End_Procedure
+
+    { MethodType=Property DesignTime=False }
+    Function ComIsConnected Returns Boolean
+        Handle hDispatchDriver
+        Boolean retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 3 OLE_VT_BOOL to retVal
+        Function_Return retVal
+    End_Function
+End_Class
+
+// CoClass
+// CLSID: {4F31F80B-4D0A-4B3D-92BA-EAAD74D6016D}
+Class cComEvoDispatchConnection is a cComAutomationObject
+    Import_Class_Protocol cComIEvoDispatchConnection
+
+    Procedure Construct_Object
+        Forward Send Construct_Object
+        Set psProgID to "{4F31F80B-4D0A-4B3D-92BA-EAAD74D6016D}"
+        Set peAutoCreate to acNoAutoCreate
+    End_Procedure
+End_Class
+
+// CLSID: {271B9DDD-07BC-4F84-9EAF-B1E77C3C8E4E}
+Class cComIEvoField is a cComAutomationObject
+
+    { MethodType=Property DesignTime=False }
+    Function ComId Returns Integer
+        Handle hDispatchDriver
+        Integer retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 1 OLE_VT_I4 to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComName Returns String
+        Handle hDispatchDriver
+        String retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 2 OLE_VT_BSTR to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComType Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 3 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComFlags Returns Integer
+        Handle hDispatchDriver
+        Integer retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 4 OLE_VT_I4 to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComVisibility Returns OLEEVO_VISIBILITY
+        Handle hDispatchDriver
+        OLEEVO_VISIBILITY retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 5 OLE_VT_I4 to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComDescription Returns String
+        Handle hDispatchDriver
+        String retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 6 OLE_VT_BSTR to retVal
+        Function_Return retVal
+    End_Function
+End_Class
+
+// CLSID: {17B03014-738F-468A-B9B3-E30B57C093EE}
+Class cComIEvoType is a cComAutomationObject
+
+    { MethodType=Property DesignTime=False }
+    Function ComKind Returns OLEEVO_TYPES
+        Handle hDispatchDriver
+        OLEEVO_TYPES retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 1 OLE_VT_I4 to retVal
+        Function_Return retVal
+    End_Function
+End_Class
+
+// CLSID: {7380FAA1-C93A-4124-9A0B-A59432F77329}
+Class cComIEvoPrivateField is a cComAutomationObject
+
+    { MethodType=Property DesignTime=False }
+    Function ComId Returns Integer
+        Handle hDispatchDriver
+        Integer retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 1 OLE_VT_I4 to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComName Returns String
+        Handle hDispatchDriver
+        String retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 2 OLE_VT_BSTR to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComType Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 3 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComFlags Returns Integer
+        Handle hDispatchDriver
+        Integer retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 4 OLE_VT_I4 to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComVisibility Returns OLEEVO_VISIBILITY
+        Handle hDispatchDriver
+        OLEEVO_VISIBILITY retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 5 OLE_VT_I4 to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComDescription Returns String
+        Handle hDispatchDriver
+        String retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 6 OLE_VT_BSTR to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComValue Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 7 OLE_VT_VARIANT to retVal
+        Function_Return retVal
+    End_Function
+End_Class
+
+// CLSID: {C23CD75F-B006-4443-B4C1-DBC26DB1A9AE}
+Class cComIEvoPrototype is a cComAutomationObject
+
+    { MethodType=Property DesignTime=False }
+    Function ComParameters Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 1 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+End_Class
+
+// CLSID: {6CD5F06D-2869-4E19-A3AC-ECF24258DFCF}
+Class cComIEvoCollection is a cComAutomationObject
+
+    { MethodType=Property DesignTime=False }
+    Function Com_NewEnum Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver -4 OLE_VT_UNKNOWN to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComItem Integer llIndex Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 1
+        Send DefineParam to hDispatchDriver OLE_VT_I4 llIndex
+        Get InvokeComMethod of hDispatchDriver 0 OLE_VT_VARIANT to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComCount Returns Integer
+        Handle hDispatchDriver
+        Integer retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 1 OLE_VT_I4 to retVal
+        Function_Return retVal
+    End_Function
+End_Class
+
+// CLSID: {9389C2C9-E2C2-4666-BA4A-262066ED3A39}
+Class cComIEvoMethod is a cComAutomationObject
+
+    { MethodType=Property DesignTime=False }
+    Function ComParameters Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 1 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComId Returns Integer
+        Handle hDispatchDriver
+        Integer retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 2 OLE_VT_I4 to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComName Returns String
+        Handle hDispatchDriver
+        String retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 3 OLE_VT_BSTR to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComReturns Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 4 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComFlags Returns Integer
+        Handle hDispatchDriver
+        Integer retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 5 OLE_VT_I4 to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComDescription Returns String
+        Handle hDispatchDriver
+        String retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 6 OLE_VT_BSTR to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComRetvalDescription Returns String
+        Handle hDispatchDriver
+        String retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 7 OLE_VT_BSTR to retVal
+        Function_Return retVal
+    End_Function
+End_Class
+
+// CLSID: {61E15563-D124-4D49-A867-00025F36D9C0}
+Class cComIEvoMutableCollection is a cComAutomationObject
+
+    { MethodType=Property DesignTime=False }
+    Function Com_NewEnum Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver -4 OLE_VT_UNKNOWN to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComItem Integer llIndex Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 1
+        Send DefineParam to hDispatchDriver OLE_VT_I4 llIndex
+        Get InvokeComMethod of hDispatchDriver 0 OLE_VT_VARIANT to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComCount Returns Integer
+        Handle hDispatchDriver
+        Integer retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 1 OLE_VT_I4 to retVal
+        Function_Return retVal
+    End_Function
+
+    Procedure ComAdd Variant llValue
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 1
+        Send DefineParam to hDispatchDriver OLE_VT_VARIANT llValue
+        Send InvokeComMethod to hDispatchDriver 2 OLE_VT_VOID
+    End_Procedure
+
+    Procedure ComRemove Integer llIndex
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 1
+        Send DefineParam to hDispatchDriver OLE_VT_I4 llIndex
+        Send InvokeComMethod to hDispatchDriver 3 OLE_VT_VOID
+    End_Procedure
+
+    Procedure ComClear
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send InvokeComMethod to hDispatchDriver 4 OLE_VT_VOID
+    End_Procedure
+
+    Procedure ComReserve Integer llSize
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 1
+        Send DefineParam to hDispatchDriver OLE_VT_I4 llSize
+        Send InvokeComMethod to hDispatchDriver 5 OLE_VT_VOID
+    End_Procedure
+
+    Function ComAddNew Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 6 OLE_VT_VARIANT to retVal
+        Function_Return retVal
+    End_Function
+End_Class
+
+// CLSID: {F6F51E9B-6254-47F7-9603-8287D3871691}
+Class cComIEvoTypeBuilder is a cComAutomationObject
+
+    Function ComCreateBool Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 1 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    Function ComCreateByte Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 2 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    Function ComCreateInt16 Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 3 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    Function ComCreateInt32 Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 4 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    Function ComCreateInt64 Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 5 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    Function ComCreateDouble Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 6 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    Function ComCreateString Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 7 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    Function ComCreateMap Variant llKeyType Variant llValueType Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 2
+        Send DefineParam to hDispatchDriver OLE_VT_DISPATCH llKeyType
+        Send DefineParam to hDispatchDriver OLE_VT_DISPATCH llValueType
+        Get InvokeComMethod of hDispatchDriver 8 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    Function ComCreateSet Variant llContainedType Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 1
+        Send DefineParam to hDispatchDriver OLE_VT_DISPATCH llContainedType
+        Get InvokeComMethod of hDispatchDriver 9 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    Function ComCreateList Variant llContainedType Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 1
+        Send DefineParam to hDispatchDriver OLE_VT_DISPATCH llContainedType
+        Get InvokeComMethod of hDispatchDriver 10 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    Function ComCreateDate Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 11 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    Function ComCreateDateTime Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 12 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    Function ComCreateBinary Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 13 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    Function ComCreateDecimal Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 14 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+End_Class
+
+// CLSID: {7604CA2D-8AF5-4895-9AA2-5677115A75D6}
+Class cComIEvoScalar is a cComAutomationObject
+
+    { MethodType=Property DesignTime=False }
+    Function ComKind Returns OLEEVO_TYPES
+        Handle hDispatchDriver
+        OLEEVO_TYPES retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 1 OLE_VT_I4 to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComType Returns OLEEVO_SCALARS
+        Handle hDispatchDriver
+        OLEEVO_SCALARS retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 2 OLE_VT_I4 to retVal
+        Function_Return retVal
+    End_Function
+End_Class
+
+// CLSID: {0225D5B3-F610-47D2-BD3E-03A4C5CBD1D8}
+Class cComIEvoMap is a cComAutomationObject
+
+    { MethodType=Property DesignTime=False }
+    Function ComKind Returns OLEEVO_TYPES
+        Handle hDispatchDriver
+        OLEEVO_TYPES retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 1 OLE_VT_I4 to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComKeyType Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 2 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComValueType Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 3 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+End_Class
+
+// CLSID: {B090843B-D9AB-4A44-85B4-B878F0855F16}
+Class cComIEvoList is a cComAutomationObject
+
+    { MethodType=Property DesignTime=False }
+    Function ComKind Returns OLEEVO_TYPES
+        Handle hDispatchDriver
+        OLEEVO_TYPES retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 1 OLE_VT_I4 to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComContainedType Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 2 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+End_Class
+
+// CLSID: {13BD6B34-E357-47F7-AF41-58234C57242C}
+Class cComIEvoStructBuilder is a cComAutomationObject
+
+    Procedure ComAddField Integer llId String llName String llDescription Variant llType Integer llFlags
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 5
+        Send DefineParam to hDispatchDriver OLE_VT_I4 llId
+        Send DefineParam to hDispatchDriver OLE_VT_BSTR llName
+        Send DefineParam to hDispatchDriver OLE_VT_BSTR llDescription
+        Send DefineParam to hDispatchDriver OLE_VT_DISPATCH llType
+        Send DefineParam to hDispatchDriver OLE_VT_I4 llFlags
+        Send InvokeComMethod to hDispatchDriver 1 OLE_VT_VOID
+    End_Procedure
+
+    Function ComCreateStruct String llName String llDescription Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 2
+        Send DefineParam to hDispatchDriver OLE_VT_BSTR llName
+        Send DefineParam to hDispatchDriver OLE_VT_BSTR llDescription
+        Get InvokeComMethod of hDispatchDriver 2 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    Function ComCreatePrototype Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 3 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    Procedure ComAddPrivateField Integer llId String llName String llDescription Variant llType Variant llValue
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 5
+        Send DefineParam to hDispatchDriver OLE_VT_I4 llId
+        Send DefineParam to hDispatchDriver OLE_VT_BSTR llName
+        Send DefineParam to hDispatchDriver OLE_VT_BSTR llDescription
+        Send DefineParam to hDispatchDriver OLE_VT_DISPATCH llType
+        Send DefineParam to hDispatchDriver OLE_VT_VARIANT llValue
+        Send InvokeComMethod to hDispatchDriver 4 OLE_VT_VOID
+    End_Procedure
+
+    // (Member is disabled because of invalid return type or parameter type)
+    //Function ComCreateStructWithGuid String llName String llDescription  llGuid Returns Variant
+        //Handle hDispatchDriver
+        //Variant retVal
+        //Get phDispatchDriver to hDispatchDriver
+        //Send PrepareParams to hDispatchDriver 3
+        //Send DefineParam to hDispatchDriver OLE_VT_BSTR llName
+        //Send DefineParam to hDispatchDriver OLE_VT_BSTR llDescription
+        //Send DefineParam to hDispatchDriver OLE_VT_RECORD llGuid
+        //Get InvokeComMethod of hDispatchDriver 5 OLE_VT_DISPATCH to retVal
+        //Function_Return retVal
+    //End_Function
+End_Class
+
+// CLSID: {9A2C4B19-8EB3-47B5-B4C2-86458EFEAD1F}
+Class cComIEvoStruct is a cComAutomationObject
+
+    { MethodType=Property DesignTime=False }
+    Function ComKind Returns OLEEVO_TYPES
+        Handle hDispatchDriver
+        OLEEVO_TYPES retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 1 OLE_VT_I4 to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComName Returns String
+        Handle hDispatchDriver
+        String retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 2 OLE_VT_BSTR to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComFields Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 3 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    // (Member is disabled because of invalid return type or parameter type)
+    //{ MethodType=Property DesignTime=False }
+    //Function ComGuid Returns 
+        //Handle hDispatchDriver
+        // retVal
+        //Get phDispatchDriver to hDispatchDriver
+        //Get InvokeComMethod of hDispatchDriver 4 OLE_VT_RECORD to retVal
+        //Function_Return retVal
+    //End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComDescription Returns String
+        Handle hDispatchDriver
+        String retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 5 OLE_VT_BSTR to retVal
+        Function_Return retVal
+    End_Function
+End_Class
+
+// CLSID: {5E6345DE-3620-49EA-8DB5-A42936B8E791}
+Class cComIEvoServiceBuilder is a cComAutomationObject
+
+    Procedure ComAddFunction Integer llId String llName String llDescription Variant llReturnType String llRetvalDescription Variant llPrototype Integer llFlags
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 7
+        Send DefineParam to hDispatchDriver OLE_VT_I4 llId
+        Send DefineParam to hDispatchDriver OLE_VT_BSTR llName
+        Send DefineParam to hDispatchDriver OLE_VT_BSTR llDescription
+        Send DefineParam to hDispatchDriver OLE_VT_DISPATCH llReturnType
+        Send DefineParam to hDispatchDriver OLE_VT_BSTR llRetvalDescription
+        Send DefineParam to hDispatchDriver OLE_VT_DISPATCH llPrototype
+        Send DefineParam to hDispatchDriver OLE_VT_I4 llFlags
+        Send InvokeComMethod to hDispatchDriver 1 OLE_VT_VOID
+    End_Procedure
+
+    Procedure ComAddProcedure Integer llId String llName String llDescription Variant llPrototype Integer llFlags
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 5
+        Send DefineParam to hDispatchDriver OLE_VT_I4 llId
+        Send DefineParam to hDispatchDriver OLE_VT_BSTR llName
+        Send DefineParam to hDispatchDriver OLE_VT_BSTR llDescription
+        Send DefineParam to hDispatchDriver OLE_VT_DISPATCH llPrototype
+        Send DefineParam to hDispatchDriver OLE_VT_I4 llFlags
+        Send InvokeComMethod to hDispatchDriver 2 OLE_VT_VOID
+    End_Procedure
+
+    Function ComCreateService String llName String llDescription Variant llExtends Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 3
+        Send DefineParam to hDispatchDriver OLE_VT_BSTR llName
+        Send DefineParam to hDispatchDriver OLE_VT_BSTR llDescription
+        Send DefineParam to hDispatchDriver OLE_VT_DISPATCH llExtends
+        Get InvokeComMethod of hDispatchDriver 3 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    Function ComCreateServiceWithCustomExceptionData String llName String llDescription Variant llExceptionData Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 3
+        Send DefineParam to hDispatchDriver OLE_VT_BSTR llName
+        Send DefineParam to hDispatchDriver OLE_VT_BSTR llDescription
+        Send DefineParam to hDispatchDriver OLE_VT_DISPATCH llExceptionData
+        Get InvokeComMethod of hDispatchDriver 4 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+End_Class
+
+// CLSID: {28B94B6D-98C8-4F28-B2C3-39D307D5E13E}
+Class cComIEvoService is a cComAutomationObject
+
+    { MethodType=Property DesignTime=False }
+    Function ComName Returns String
+        Handle hDispatchDriver
+        String retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 1 OLE_VT_BSTR to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComExtends Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 2 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComMethods Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 3 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComIDL Returns String
+        Handle hDispatchDriver
+        String retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 4 OLE_VT_BSTR to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComExceptionData Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 5 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComWSDL Returns String
+        Handle hDispatchDriver
+        String retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 6 OLE_VT_BSTR to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComDescription Returns String
+        Handle hDispatchDriver
+        String retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 7 OLE_VT_BSTR to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComWADL Returns String
+        Handle hDispatchDriver
+        String retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 8 OLE_VT_BSTR to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComProto Returns String
+        Handle hDispatchDriver
+        String retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 9 OLE_VT_BSTR to retVal
+        Function_Return retVal
+    End_Function
+End_Class
+
+// CLSID: {2FCEEDA5-6697-4CB7-9B70-C9622BE7111E}
+Class cComIEvoRuntime is a cComAutomationObject
+
+    Procedure ComSetErrorInfo String llMessage
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 1
+        Send DefineParam to hDispatchDriver OLE_VT_BSTR llMessage
+        Send InvokeComMethod to hDispatchDriver 1 OLE_VT_VOID
+    End_Procedure
+
+    Function ComCreateErrorInfoData Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 2 OLE_VT_VARIANT to retVal
+        Function_Return retVal
+    End_Function
+
+    Procedure ComSetErrorInfoWithData String llMessage Variant llData
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 2
+        Send DefineParam to hDispatchDriver OLE_VT_BSTR llMessage
+        Send DefineParam to hDispatchDriver OLE_VT_VARIANT llData
+        Send InvokeComMethod to hDispatchDriver 3 OLE_VT_VOID
+    End_Procedure
+
+    Procedure ComResetErrorInfo
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send InvokeComMethod to hDispatchDriver 4 OLE_VT_VOID
+    End_Procedure
+
+    { MethodType=Property DesignTime=False }
+    Function ComJWT Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        String sRetVal
+        Move "" to sRetVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 6 OLE_VT_BSTR to sRetVal
+        If (sRetVal <> "") Begin
+            Get InvokeComMethod of hDispatchDriver 5 OLE_VT_VARIANT to retVal
+        End
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComJWS Returns String
+        Handle hDispatchDriver
+        String retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 6 OLE_VT_BSTR to retVal
+        Function_Return retVal
+    End_Function
+    
+    Procedure ComHeartbeat
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send InvokeComMethod to hDispatchDriver 7 OLE_VT_VOID
+    End_Procedure    
+End_Class
+
+// CLSID: {60BF5709-ADBD-44E0-8A5E-372096E83149}
+Class cComIEvoServiceRuntimeCollection is a cComAutomationObject
+
+    { MethodType=Property DesignTime=False }
+    Function Com_NewEnum Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver -4 OLE_VT_UNKNOWN to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComItem Integer llIndex Returns Variant
+        Handle hDispatchDriver
+        Variant retVal
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 1
+        Send DefineParam to hDispatchDriver OLE_VT_I4 llIndex
+        Get InvokeComMethod of hDispatchDriver 0 OLE_VT_DISPATCH to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Function ComCount Returns Integer
+        Handle hDispatchDriver
+        Integer retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 1 OLE_VT_I4 to retVal
+        Function_Return retVal
+    End_Function
+
+    Procedure ComAdd Variant llServiceRuntime
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 1
+        Send DefineParam to hDispatchDriver OLE_VT_DISPATCH llServiceRuntime
+        Send InvokeComMethod to hDispatchDriver 2 OLE_VT_VOID
+    End_Procedure
+
+    Procedure ComRemove Integer llIndex
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 1
+        Send DefineParam to hDispatchDriver OLE_VT_I4 llIndex
+        Send InvokeComMethod to hDispatchDriver 3 OLE_VT_VOID
+    End_Procedure
+End_Class
+
+// CLSID: {3F222A3B-68A7-4059-9A84-FBB42096401B}
+Class cComIEvoSimpleServerSettings is a cComAutomationObject
+
+    { MethodType=Property DesignTime=False }
+    Function ComTcpPort Returns UShort
+        Handle hDispatchDriver
+        UShort retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 10 OLE_VT_UI2 to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Procedure Set ComTcpPort UShort value
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 1
+        Set ComProperty of hDispatchDriver 10 OLE_VT_UI2 to value
+    End_Procedure
+
+    { MethodType=Property DesignTime=False }
+    Function ComServerTransport Returns OLEEVO_TRANSPORTS
+        Handle hDispatchDriver
+        OLEEVO_TRANSPORTS retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 20 OLE_VT_I4 to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Procedure Set ComServerTransport OLEEVO_TRANSPORTS value
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 1
+        Set ComProperty of hDispatchDriver 20 OLE_VT_I4 to value
+    End_Procedure
+
+    { MethodType=Property DesignTime=False }
+    Function ComServerProtocol Returns OLEEVO_PROTOCOLS
+        Handle hDispatchDriver
+        OLEEVO_PROTOCOLS retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 30 OLE_VT_I4 to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Procedure Set ComServerProtocol OLEEVO_PROTOCOLS value
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 1
+        Set ComProperty of hDispatchDriver 30 OLE_VT_I4 to value
+    End_Procedure
+
+    { MethodType=Property DesignTime=False }
+    Function ComLocalizeDatetime Returns Boolean
+        Handle hDispatchDriver
+        Boolean retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 40 OLE_VT_BOOL to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Procedure Set ComLocalizeDatetime Boolean value
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 1
+        Set ComProperty of hDispatchDriver 40 OLE_VT_BOOL to value
+    End_Procedure
+
+    { MethodType=Property DesignTime=False }
+    Function ComStringEncoding Returns OLEEVO_ENCODINGS
+        Handle hDispatchDriver
+        OLEEVO_ENCODINGS retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 50 OLE_VT_I4 to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Procedure Set ComStringEncoding OLEEVO_ENCODINGS value
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 1
+        Set ComProperty of hDispatchDriver 50 OLE_VT_I4 to value
+    End_Procedure
+
+    { MethodType=Property DesignTime=False }
+    Function ComIncomingJwtConfigurations Returns String
+        Handle hDispatchDriver
+        String retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 60 OLE_VT_BSTR to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Procedure Set ComIncomingJwtConfigurations String value
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 1
+        Set ComProperty of hDispatchDriver 60 OLE_VT_BSTR to value
+    End_Procedure
+
+    { MethodType=Property DesignTime=False }
+    Function ComOutgoingJwtConfiguration Returns String
+        Handle hDispatchDriver
+        String retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 70 OLE_VT_BSTR to retVal
+        Function_Return retVal
+    End_Function
+
+    { MethodType=Property DesignTime=False }
+    Procedure Set ComOutgoingJwtConfiguration String value
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 1
+        Set ComProperty of hDispatchDriver 70 OLE_VT_BSTR to value
+    End_Procedure
+End_Class
+
+// CLSID: {91BB24E5-0D9F-4A7B-9641-77727DAC8A38}
+Class cComIEvoConsole is a cComAutomationObject
+
+    Function ComConnect Variant llServer Variant llServices OLEEVO_MARSHALING_MODES llmode Returns UInteger
+        Handle hDispatchDriver
+        UInteger retVal
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 3
+        Send DefineParam to hDispatchDriver OLE_VT_DISPATCH llServer
+        Send DefineParam to hDispatchDriver OLE_VT_DISPATCH llServices
+        Send DefineParam to hDispatchDriver OLE_VT_I4 llmode
+        Get InvokeComMethod of hDispatchDriver 1 OLE_VT_UI4 to retVal
+        Function_Return retVal
+    End_Function
+
+    Procedure ComDisconnect UInteger llCookie
+        Handle hDispatchDriver
+        Get phDispatchDriver to hDispatchDriver
+        Send PrepareParams to hDispatchDriver 1
+        Send DefineParam to hDispatchDriver OLE_VT_UI4 llCookie
+        Send InvokeComMethod to hDispatchDriver 2 OLE_VT_VOID
+    End_Procedure
+
+    { MethodType=Property DesignTime=False }
+    Function ComIsRunning Returns Boolean
+        Handle hDispatchDriver
+        Boolean retVal
+        Get phDispatchDriver to hDispatchDriver
+        Get InvokeComMethod of hDispatchDriver 3 OLE_VT_BOOL to retVal
+        Function_Return retVal
+    End_Function
+End_Class

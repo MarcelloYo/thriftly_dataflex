@@ -1,0 +1,211 @@
+Use cThriftlyService.pkg
+Use set.pkg
+
+// ===========================================================================
+//
+// The ROUND_NUMBER global function has been designed to return the rounded
+// value of a given 'numeric' argument at a specified rounding precision.
+//
+// The function requires two arguments, as follows:-
+//
+// (a) The numeric value to be rounded, where the range of valid values is
+//     +/- 99,999,999,999,999.99999999.
+//
+// (b) The rounding precision required.  This must be an integer value in the
+//     range -13 to +8.  If a value outside this range is used, the nearest
+//     threshold value is substituted.
+//
+//     Values in the range +1 to +7 perform rounding on the decimal part of
+//     the number.  A value of +8 will perform no rounding at all.  A zero
+//     value will round to the nearest whole number.  Values -1 to -13 will
+//     round progressively to the left of the decimal point (a frequent
+//     requirement in financial reporting).
+//
+// If the result of the rounding produces a value outside the valid numeric
+// range (+/- 99,999,999,999,999.99999999) then a zero value is returned.
+//
+// Assumptions:-  The only assumptions made have been that the range of
+// numeric values and the limit of eight decimal places are unlikely to change
+// in the forseeable future.
+//
+// Examples:-
+//
+//  1st Argument      2nd Argument   Return Value
+//  ------------      ------------   ------------
+//  123456.87654321         8         123456.87654321
+//  123456.87654321         2         123456.88
+// -123456.87654321         2        -123456.88
+//  123456.98765432         0         123457
+// -123456.98765432        -1        -123460
+//  123456.98765432        -2         123500
+//  123456.98765432        -3         123000
+//  987654                 -4         990000
+//  987654                 -5        1000000
+//  987654                 -6        1000000
+//  987654                 -7              0
+//
+// ===========================================================================
+
+
+ Function Round_Number Global Number nVal Integer iRnd Returns Number
+   // If the rounding precision falls in the range -5 to +8, then return:-
+   If (iRnd >= -5) Function_Return ;
+   (Number(Abs(nVal) / nVal) * 0.5 / (Number(10 ^ (iRnd min 8))) + nVal ;
+     / (Number(10 ^ (8 - (iRnd min 8)))) * (Number(10 ^ (8 - (iRnd min 8)))))
+   // Else, where the rounding precision is in the range -6 to -13, return:-
+   Function_Return ;
+     (Number(Abs(nVal) / nVal) * 0.5 * (Number(10 ^ (Abs(iRnd) min 13))) ;
+       + nVal / (Number(10 ^ 13)) / (Number(10 ^ ((Abs(iRnd) - 5) min 8))) ;
+         * (Number(10 ^ 13)) * (Number(10 ^ ((Abs(iRnd) - 5) min 8))))
+ End_Function
+ 
+Object oTestArrays is a cThriftlyService
+    Set psServiceName to "Arrays"
+
+    {Published=True}
+    Function SubtractFirstFromSecond String[] first_str_array String[] second_str_array Returns String[]
+        Integer cnt i
+        Move (SizeOfArray(first_str_array)) to cnt
+        
+        For i from 0 to (cnt-1)
+            Move (RemoveFromArray(second_str_array, SearchArray(first_str_array[i], second_str_array))) to second_str_array
+        Loop
+        Function_Return second_str_array
+    End_Function
+
+    {Published=True}
+    Function BitFlipper Boolean[] bits Returns Boolean[]
+        Integer cnt i
+        Move (SizeOfArray(bits)) to cnt
+        
+        For i from 0 to (cnt-1)
+            Move (not(bits[i])) to bits[i]
+        Loop
+        Function_Return bits
+    End_Function
+
+    {Published=True}
+    Function NegateShortArray Short[] shorts Returns Short[]
+        Integer cnt i
+        Move (SizeOfArray(shorts)) to cnt
+        
+        For i from 0 to (cnt-1)
+            Move (-1 * shorts[i]) to shorts[i]
+        Loop
+        Function_Return shorts
+    End_Function
+
+    {Published=True}
+    Function AddIntegerArrays Integer[] first_int_array Integer[] second_int_array Returns Integer[]
+        Integer cnt i
+        Move (ResizeArray(first_int_array, (SizeOfArray(first_int_array) max SizeOfArray(second_int_array)))) to first_int_array
+        Move (ResizeArray(second_int_array, (SizeOfArray(first_int_array) max SizeOfArray(second_int_array)))) to second_int_array
+        Move (SizeOfArray(first_int_array)) to cnt
+        
+        For i from 0 to (cnt-1)
+            Move (first_int_array[i] + second_int_array[i]) to first_int_array[i]
+        Loop
+        Function_Return first_int_array
+    End_Function
+
+    {Published=True}
+    Function SetOfIntegers Integer[] first_int_array Integer[] second_int_array Returns Integer[]
+        Handle hoSet
+        Integer cnt i
+
+        Get Create U_Set to hoSet
+
+        Move (SizeOfArray(first_int_array)) to cnt
+        For i from 0 to (cnt-1)
+            Send add_element of hoSet first_int_array[i]
+        Loop
+        
+        Move (SizeOfArray(second_int_array)) to cnt
+        For i from 0 to (cnt-1)
+            Send add_element of hoSet second_int_array[i]
+        Loop
+        
+        Integer[] retval
+        Get Item_Count of hoSet to cnt
+        For i from 0 to (cnt-1)
+            Get Value of hoSet i to retval[i]
+        Loop
+        Function_Return retval
+    End_Function
+
+    {Published=True}
+    Function AddBigIntArrays BigInt[] first_bigint_array BigInt[] second_bigint_array Returns BigInt[]
+        Integer cnt i
+        Move (ResizeArray(first_bigint_array, (SizeOfArray(first_bigint_array) max SizeOfArray(second_bigint_array)))) to first_bigint_array
+        Move (ResizeArray(second_bigint_array, (SizeOfArray(first_bigint_array) max SizeOfArray(second_bigint_array)))) to second_bigint_array
+        Move (SizeOfArray(first_bigint_array)) to cnt
+        
+        For i from 0 to (cnt-1)
+            Move (first_bigint_array[i] + second_bigint_array[i]) to first_bigint_array[i]
+        Loop
+        Function_Return first_bigint_array
+    End_Function
+
+    {Published=True}
+    Function RoundReals Real[] numbers Integer[] decimal_places Returns Real[]
+        Integer cnt i
+        Number nVal
+        Move (ResizeArray(decimal_places, SizeOfArray(numbers))) to decimal_places
+        Move (SizeOfArray(numbers)) to cnt
+        
+        For i from 0 to (cnt-1)
+            If (decimal_places[i] < -13) Move -13 to decimal_places[i]
+            If (decimal_places[i] > 8) Move 8 to decimal_places[i]
+            
+            // For some reason Dataflex dies when I pass a value to round_number using the array
+            // so instead we move the value to a local var and it all works.
+            Move numbers[i] to nVal
+            Move (Round_Number(nVal, decimal_places[i])) to numbers[i]
+        Loop
+        
+        Function_Return numbers
+    End_Function
+    
+    {Published=True}
+    Function AddDaysToDates Date[] dates Integer[] num_days Returns Date[]
+        Integer cnt i
+        Move (ResizeArray(num_days, SizeOfArray(dates))) to num_days
+        Move (SizeOfArray(dates)) to cnt
+        
+        For i from 0 to (cnt-1)
+            Move (dates[i] + num_days[i]) to dates[i]
+        Loop
+        
+        Function_Return dates
+    End_Function
+    
+    {Published=True}
+    Function FindDateOfClosestDayOfWeek DateTime[] datetimes Integer[] day_of_week Returns DateTime[]
+        Integer cnt i dow diff
+        Move (ResizeArray(day_of_week, SizeOfArray(datetimes))) to day_of_week
+        Move (SizeOfArray(datetimes)) to cnt
+
+        For i from 0 to (cnt-1)
+            Move (DateGetDayOfWeek(datetimes[i])) to dow
+            Move (Abs(day_of_week[i])) to day_of_week[i]
+            Move (6 min day_of_week[i]) to day_of_week[i]
+            Move (day_of_week[i] - dow) to diff
+            If (diff < 0) Move (diff + 7) to diff
+            Move (datetimes[i]+diff) to datetimes[i]
+        Loop
+        
+        Function_Return datetimes
+    End_Function
+    
+    {Published=True}
+    Function ThriftlyLogo Returns UChar[]
+        UChar[] file
+        
+        Direct_Input ("BINARY:" + GetApplicationPath(ghoApplication) + "\thriftly-logo-500.png")
+            Read_Block file -1
+        Close_Input
+        
+        Function_Return file    
+    End_Function
+End_Object
+    

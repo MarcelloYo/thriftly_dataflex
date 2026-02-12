@@ -1,0 +1,5 @@
+<Templates><Template><ComponentType>0</ComponentType><Name>Thriftly API Project</Name><FileName>Thriftly.tpl</FileName><ImageLarge>mertech-32.ico</ImageLarge><BriefDescription></BriefDescription><LongDescription>Creates a Thriftly Application.
+
+Thriftly is used to build JSON-RPC, SOAP, and Thrift based API services. 
+
+Included is the ability to test your API with our Thriftly Gateway service for free. This service instantly publishes your API securely onto the internet with no setup!</LongDescription></Template><Template><ComponentType>57</ComponentType><Name>Thriftly API Service</Name><FileName>ThriftlyService.tpl</FileName><ImageLarge>mertech-32.ico</ImageLarge><BriefDescription></BriefDescription><LongDescription>Creates a service for use in an Thriftly Application.</LongDescription></Template></Templates>

@@ -1,0 +1,30 @@
+Use Windows.pkg
+Use cApplication.pkg
+Use Thriftly.pkg
+
+Object oApplication is a cApplication
+    Set pbPreserveEnvironment to False
+End_Object
+
+Object oThriftly is a cThriftlyServer
+    Use PrimitivesService.pkg
+    Use ArraysService.pkg
+    Use StructsService.pkg
+    Use ErrorsService.pkg
+    
+    // This event is only called when using the "Simple Server". This mode is activated by passing
+    // True as an additional parameter on the StartServer call. Most developers will never use this,
+    // but just in case, these are the settings you can adjust. The Developer Helper let's you do
+    // all of this graphically which is much easier.
+    Procedure OnPreSimpleServerStart Handle hoSettings
+//        Set ComIncomingJwtConfigurations of hoSettings to "none"
+//        Set ComOutgoingJwtConfiguration of hoSettings to "none"
+//        Set ComTcpPort of hoSettings to 8080
+//        Set ComServerProtocol of hoSettings to OLEEVO_JSON_RPC
+//        Set ComServerTransport of hoSettings to OLEEVO_TRANSPORT_HTTP
+//        Set ComLocalizeDatetime of hoSettings to True
+//        Set ComStringEncoding of hoSettings to OLEEVO_ENCODING_ANSI
+    End_Procedure
+End_Object
+
+Send StartServer of oThriftly

@@ -1,0 +1,31 @@
+Use cThriftlyService.pkg
+
+Object oTestErrors is a cThriftlyService
+    Set psServiceName to "Errors"
+
+    {Published=True}
+    Function ThrowInvalidExpression Returns String
+        Move "This is a test" to WindowIndex
+        Function_Return ""
+    End_Function
+
+    {Published=True}
+    Function ErrorCommand Returns String
+        Error 411 "This is an error command."
+        Function_Return ""
+    End_Function
+
+    {Published=True}
+    Function ThrowServiceException Returns String
+        ErrorData exception
+
+        Move "This is an Error Description. The Value should be 'blah' and error number is 10000. Callstack will contain just the name of this function and line number is the line the exception was thrown on." to exception.Description
+        Move "Blah" to exception.Value
+        Move 10000 to exception.ErrorNumber
+        Move "The caption element is something Dataflex sometimes uses" to exception.Caption
+        Send ServiceException "This is the error message" exception                
+        Function_Return ""
+    End_Function
+End_Object
+
+

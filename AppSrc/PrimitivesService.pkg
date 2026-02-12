@@ -1,0 +1,85 @@
+﻿Use cThriftlyService.pkg
+
+Struct token
+    DateTime expires_at
+    Integer level
+End_Struct
+
+Object oTestPrimitives is a cThriftlyService
+    Set psServiceName to "Primitives"
+    
+    {LoginMethod=True}
+    Function LoginUser String user_name String password Returns token
+        token toke
+        TimeSpan expir
+        If (lowercase(user_name) = "thriftly" and lowercase(password) = "thriftly") Begin
+            Move (DateSetMinute(expir, 30)) to expir
+            Move (CurrentDateTime() + expir) to toke.expires_at
+            Move 4 to toke.level
+            Function_Return toke
+        End
+        Else Error 300 'You are not authorized! Try "thriftly" for the username and password.'
+    End_Function
+    
+    {AuthMethod=True}
+    Function AuthMethod Integer iMethodID String sMethodName token toke Returns token
+        TimeSpan expir
+        If (CurrentDateTime() < toke.expires_at) Begin
+            Move (DateSetMinute(expir, 30)) to expir
+            Move (CurrentDateTime() + expir) to toke.expires_at
+            Function_Return toke
+        End
+        Else Error 300 "Your login has expired, please login again."
+    End_Function
+    
+    {Published=True}
+    Function AddStrings String first_str String second_str Returns String
+        token toke
+        Get JWTPayload to toke
+        
+        If (toke.level >= 4) Begin
+            Function_Return (first_str + second_str)
+        End
+        Else Error 300 (SFormat("Sorry, this function requires level %1 access, you only have level %2 access", 4, toke.level))
+    End_Function
+
+    {Published=True}
+    Function XOR Boolean first_bool Boolean second_bool Returns Boolean
+        Function_Return ((first_bool and not(second_bool)) or (not(first_bool) and second_bool))             
+    End_Function
+
+    {Published=True}
+    Function AddChars UChar first_char UChar second_char Returns UChar
+        Function_Return (first_char + second_char)
+    End_Function
+    
+    {Published=True}
+    Function AddShorts Short first_short Short second_short Returns Short
+        Function_Return (first_short + second_short)
+    End_Function
+
+    {Published=True}
+    Function AddIntegers Integer first_int Integer second_int Returns Integer
+        Function_Return (first_int + second_int)
+    End_Function
+
+    {Published=True}
+    Function AddBigInts BigInt first_bigint BigInt second_bigint Returns BigInt
+        Function_Return (first_bigint + second_bigint)
+    End_Function
+
+    {Published=True}
+    Function AddNumbers Number first_number Number second_number Returns Number
+        Function_Return (first_number + second_number)
+    End_Function
+    
+    {Published=True}
+    Function AddDaysToDate Date start_date Integer num_days Returns Date
+        Function_Return (start_date + num_days)
+    End_Function
+    
+    {Published=True}
+    Function AddMilliSecondsToDateTime DateTime start_datetime BigInt milliseconds Returns DateTime
+        Function_Return (start_datetime + (cast(milliseconds, number)/1000.0))
+    End_Function
+End_Object

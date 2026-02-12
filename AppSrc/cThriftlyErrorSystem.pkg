@@ -1,0 +1,164 @@
+Use UI
+Use Dferror.pkg
+
+#IFNDEF _STRUCT_ErrorData
+Struct ErrorData
+    Boolean  Unhandled
+    Integer  ErrorNumber
+    Integer  LineNumber
+    Boolean  IsCritical
+    String   Value
+    String   Description
+    String   Caption
+    String[] CallStack
+End_Struct
+#ENDIF
+
+#IFNDEF C_CRLF
+Define C_CRLF for (Character(13)+Character(10))
+#ENDIF
+
+Class cThriftlyErrorSystem is an ErrorSystem    
+    Procedure Construct_Object
+        Property Handle phoEvoRuntime
+        Property Boolean pbErrorsIncludeStackTrace True
+        Property Integer Error_Processing_State False
+        Forward Send Construct_Object
+    End_Procedure
+
+    Procedure End_Construct_Object
+        Forward Send End_Construct_Object
+        
+        Send RemoveAllUserErrors // we want everything to run through our handlers
+    End_Procedure
+
+    Function StringToArray String sSrc String sDelim Returns String[]
+        Integer iPos iCtr
+        String[] sData
+        Repeat
+            Move (Pos(sDelim,sSrc)) to iPos
+            If (iPos > 0) Begin
+                Move (Left(sSrc,(iPos-1))) to sData[iCtr]
+                Move (Replace(sData[iCtr],sSrc,'')) to sSrc
+                Move (Replace(sDelim,sSrc,'')) to sSrc
+                Increment iCtr
+            End
+            Else Break
+        Loop
+        If (Length(sSrc) > 0) Begin
+          Move sSrc to sData[iCtr]
+        End
+        Function_Return sData
+    End_Function
+  
+    Procedure Error_Report Integer ErrNum Integer Err_Line String ErrMsg
+        Integer iReply iIcon
+        String  sErrorText sMess sCallStack
+        String[] callstack
+        String  sSource sCaption
+        Integer iSrcPos iSrc iTxtLen
+        Handle hoRuntime
+        Variant vRuntime
+        Variant vErrInfo
+        Boolean bIsUnhandled bUnhandledSupport bCritical bVerbose
+        ErrorData errinfo
+        
+        If (Error_processing_State(Self)) Begin // don't allow error
+            Procedure_Return                     // recursion
+        End
+        
+        Set Error_Processing_State to True // we are now in an error reporting state
+        Get Is_Critical errnum to bCritical
+
+        Get ComRuntime of EVO_CURRENT_SERVICE to vRuntime
+        Get Create U_cComIEvoRuntime to hoRuntime
+        Set pvComObject of hoRuntime to vRuntime
+
+        Move True to errinfo.Unhandled
+        Move ErrNum to errinfo.ErrorNumber
+        Move Err_Line to errinfo.LineNumber
+        Move bCritical to errinfo.IsCritical
+
+        If (pbErrorsIncludeStackTrace(Self)) Begin
+            CallStackDump sCallStack
+            
+            Get StringToArray sCallStack C_CRLF to callstack
+            // This function ends up in the call stack, which is stupid and deceptive, so remove it if it's present.
+            // Unfortunately it's not ALWAYS present, so you can't just always remove the first time.
+            If (Left(callstack[0], 16) = "MSG_ERROR_REPORT") ;
+                Move (RemoveFromArray(callstack, 0)) to callstack
+            
+            Move callstack to errinfo.CallStack
+        End
+            
+        If not ( isTrapped( TrappedErrors( Self ), ErrNum ) ) Begin
+            // if trapped do nothing
+            
+            // We used to forward send. Since this is based on array, it does not understand this message, the forward was
+            // not understood. Since arrays don't delegate or error, nothing happened.
+            // An easier way to do nothing, is to do nothing, hence this line is removed
+            //forward send Error_Report ErrNum Err_Line ErrMsg
+            
+            Set pvComObject of hoRuntime to (NullComObject())
+            Send Destroy_Object of hoRuntime
+        End
+        Else Begin
+            // See if source information is provided (Source = module.function). If so remove
+            // as detail. Must find last instance of this in string
+            Move (pos(C_ErrorContextSourceText,ErrMsg)) to iSrc
+            If iSrc Begin
+                Move (iSrc-1) to iSrcPos
+                Move (length(C_ErrorContextSourceText)) to  iTxtLen
+                Move ErrMsg to sSource
+                Repeat // this makes sure we find last instance of this
+                    Move (remove(sSource, 1, iSrc-1 + iTxtLen )) to sSource // right part of string
+                    Move (pos(C_ErrorContextSourceText,sSource)) to iSrc           // see if it was the last
+                    If iSrc ;                                               // if not, track length
+                       Move (iSrcPos + iTxtLen + iSrc-1) to iSrcPos
+                Until (iSrc=0)
+                Move (trim(left(ErrMsg,iSrcPos))) to ErrMsg
+                If (right(ErrMsg,1)=',') ;
+                   Move (left(ErrMsg,length(ErrMsg)-1)) to ErrMsg
+            End
+            
+            // the caption normally used for handled user errors
+            Move "" to sCaption
+            // if an operator error this may be a Procedure UserError situation where the
+            // caption is passed in the error text. If so, get the caption
+            If (ErrNum=DFERR_OPERATOR) Begin
+             Move (pos(C_ErrorCaption,ErrMsg)) to iSrc
+             If iSrc Begin
+                Move (length(C_ErrorCaption)) to  iTxtLen
+                Move (remove(ErrMsg, 1, iSrc-1 + iTxtLen )) to sCaption
+                Move (Left(ErrMsg,iSrc-1)) to ErrMsg
+             End
+            End
+
+            Move ErrMsg to errinfo.Value
+            Move sCaption to errinfo.Caption
+            
+            Get Error_Description ErrNum ErrMsg to sErrorText
+            
+            // if the error source is identified we can get extended error
+            // text for our error message
+            If ghoErrorSource Begin
+                Get extended_error_Message of ghoErrorSource to sMess
+                If sMess ne '' ;
+                   Move (sErrorText + "\n\n" + sMess ) to sErrorText
+            End
+
+            Move sErrorText to errinfo.Description
+            Send Custom_Error_Report of EVO_CURRENT_SERVICE hoRuntime errinfo
+
+            Set pvComObject of hoRuntime to (NullComObject())
+            Send Destroy_Object of hoRuntime
+            
+            // abort on critical errors
+            If bCritical Abort
+       End
+
+       Move 0 to ghoErrorSource
+       Set Error_Processing_State to False // no longer reporting an error
+    End_Procedure
+
+End_Class

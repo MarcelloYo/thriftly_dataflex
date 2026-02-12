@@ -1,0 +1,420 @@
+Use UI
+
+Object oSessionManager is a cObject
+End_Object
+
+Class cThriftlyService is a cComEvoServiceRuntime
+    
+    { Visibility=Private }
+    Procedure Construct_Object
+        // The cBaseWebService class is not used to run Thriftly, it's used to help
+        // analyze the exposed functions.
+        { Visibility=Private }
+        Property Handle phoBaseWebService (Create(Self, U_cBaseWebService))
+        { Visibility=Private }
+        Property Handle phoSessionManager
+        Property String psServiceName ""
+        Property String psCustomErrorStructName ""
+        Property Handle  Main_DD 0
+        Property Boolean pbDefaultSecured True
+        Forward Send Construct_Object
+        
+        Set phoSessionManager to oSessionManager
+    End_Procedure
+    
+    {Visibility=Public}
+    {Description="This MUST be used when you have defined a custom error structure. Make sure to call ComSetErrorInfoWithData passing your custom struct."}
+    Procedure Custom_Error_Report Handle hoRuntime ErrorData errinfo
+        Send ComSetErrorInfoWithData of hoRuntime errinfo.Description errinfo
+    End_Procedure
+    
+    { Visibility=Private }
+    Procedure End_Construct_Object
+        Forward Send End_Construct_Object
+        If (psServiceName(Self) = "") Begin
+            // If the first character is a lowercase "o" and the next letter is uppercase, then this is probably camel case hungarian notation
+            // so fix it up.
+            If (Left(Object_Label(Self), 1) = "o" and ("ABCDEFGHIJKLMNOPQRSTUVWXYZ" contains Mid(Object_Label(Self), 1, 2))) ;
+                Set psServiceName to (Remove(Object_Label(Self), 1, 1))
+            Else Set psServiceName to (Object_Label(Self)) 
+        End
+        Send RegisterService of (Parent(Self)) Self
+    End_Procedure
+
+    { Visibility=Private }
+    Procedure RegisterInterface Integer iMsg String sMsgName String sParams String sComment Integer llFlags
+        // Evolution is case insensitive.
+        Move (Lowercase(sParams)) to sParams
+        Send RegisterInterface of (phoBaseWebService(Self)) iMsg (String(llFlags) + sMsgName) sParams sComment
+    End_Procedure
+    
+    {Visibility=Public}
+    Procedure Set CustomErrorObject String struct_name
+        Integer cnt
+        ServiceErrorType[] sets
+        
+        Set psCustomErrorStructName to struct_name
+        Get pServicesCustomErrorTypes of (Parent(Self)) to sets
+        Move (SizeOfArray(sets)) to cnt
+        Move (psServiceName(Self)) to sets[cnt].serviceName
+        Move (struct_name) to sets[cnt].customErrorStructName
+        Set pServicesCustomErrorTypes of (Parent(Self)) to sets
+        
+        Send RegisterInterface of (phoBaseWebService(Self)) 0 "THRIFTLY_ERROR" (struct_name + " param") "" 
+    End_Procedure
+
+    { Visibility=Private }
+    Function CompareVariantStrings Variant val1 Variant val2 Returns Integer
+        If  (String(val1) = String (val2)) Function_Return (EQ)
+    End_Function
+    
+    { Visibility=Private }
+    Procedure ProcessInterfaces Handle hoEvoInterface Handle hoServiceBuilder Handle hoStructBuilder Handle hoTypeBuilder
+        Integer iMsgCount iMsgLoop iParamCount iParamLoop iType iArrayIndex iDim iMsgId iFlags
+        String sMsgName sParamName sReturnType sParamTypeName
+        String sErrorMessage
+        Handle hoWS
+        Handle hoDocObj
+        Variant[][] vStructs
+        Variant vPrototype
+        Variant vType
+        
+        Get phoBaseWebService to hoWS
+        Move (oThriftlyDocumentation(Self)) to hoDocObj
+        
+        Get ProcessTypes of (Parent(Self)) hoWS hoEvoInterface hoStructBuilder hoTypeBuilder to vStructs
+        
+        Get InterfaceMessageCount of hoWS to iMsgCount
+        
+        For iMsgLoop from 0 to (iMsgCount-1)
+            Get InterfaceMessageParamCount of hoWS iMsgLoop to iParamCount
+            Get InterfaceMessageName of hoWS iMsgLoop to sMsgName
+            If (trim(uppercase(sMsgName)) = "THRIFTLY_ERROR") Break Begin
+
+            Get FindMessageID of hoWS sMsgName to iMsgId
+
+            Move (Integer(Left(sMsgName, 1))) to iFlags
+            Move (Mid(sMsgName, Length(sMsgName)-1, 2)) to sMsgName
+
+            Set pvComObject of hoStructBuilder to (ComNewStruct(hoEvoInterface))
+            
+// I'm using FindMessageID a few lines earlier instead of InterfaceMessageID because starting with DF20
+// this call causes a crash for some unknown reason. - OLI
+//            Get InterfaceMessageId of hoWS iMsgLoop to iMsgId
+            Send ComAddPrivateField of hoStructBuilder 1 "MessageId" "" (ComCreateInt32(hoTypeBuilder)) iMsgId
+            Send ComAddPrivateField of hoStructBuilder 2 "MessageName" "" (ComCreateString(hoTypeBuilder)) sMsgName
+            
+            // Because of the private fields, we need to add 2 to iParamLoop where it is used to add a field...
+            For iParamLoop from 1 to iParamCount
+                Get InterfaceMessageParamType of hoWS iMsgLoop (iParamLoop-1) to iType
+                Get InterfaceMessageParamName of hoWS iMsgLoop (iParamLoop-1) to sParamName
+                Get InterfaceMessageParamTypeName of hoWS iMsgLoop (iParamLoop-1) to sParamTypeName
+                Get InterfaceMessageParamDimCount of hoWS iMsgLoop (iParamLoop-1) to iDim
+                
+                Case Begin
+                    Case (iType = xsBoolean or iType = xsBit)
+                        If (iDim = 0) Get ComCreateBool of hoTypeBuilder to vType
+                        Else Move (ComCreateList(hoTypeBuilder, ComCreateBool(hoTypeBuilder))) to vType
+                        Case Break
+                    Case (iType = xsUchar)
+                        If (iDim = 0) Get ComCreateByte of hoTypeBuilder to vType
+                        Else Move (ComCreateBinary(hoTypeBuilder)) to vType
+                        Case Break
+                    Case (iType = xsShort)
+                        If (iDim = 0) Get ComCreateInt16 of hoTypeBuilder to vType
+                        Else Move (ComCreateList(hoTypeBuilder, ComCreateInt16(hoTypeBuilder))) to vType
+                        Case Break
+                    Case (iType = xsInteger  or iType = 26)  // Thriftly.x64 TEMPORARY code
+                        If (iDim = 0) Get ComCreateInt32 of hoTypeBuilder to vType
+                        Else Move (ComCreateList(hoTypeBuilder, ComCreateInt32(hoTypeBuilder))) to vType
+                        Case Break
+                    Case (iType = xsBigint)
+                        If (iDim = 0) Get ComCreateInt64 of hoTypeBuilder to vType
+                        Else Move (ComCreateList(hoTypeBuilder, ComCreateInt64(hoTypeBuilder))) to vType
+                        Case Break
+                    Case (iType = xsNumber or iType = xsDecimal)
+                        If (iDim = 0) Get ComCreateDecimal of hoTypeBuilder to vType
+                        Else Begin
+                            Error 301 ("The data type of the parameter " * sParamName * "(" + sParamTypeName + "[ ])" * "in" * sMsgName * "is unsupported in Thriftly. Please consider using a REAL[ ] type instead. Program will now abort.")
+                            Abort
+                        End
+                        Case Break
+                    Case (iType = xsReal or iType = xsFloat)
+                        If (iDim = 0) Get ComCreateDouble of hoTypeBuilder to vType
+                        Else Move (ComCreateList(hoTypeBuilder, ComCreateDouble(hoTypeBuilder))) to vType
+                        Case Break
+                    Case (iType = xsDate)
+                        If (iDim = 0) Get ComCreateDate of hoTypeBuilder to vType
+                        Else Move (ComCreateList(hoTypeBuilder, ComCreateDate(hoTypeBuilder))) to vType
+                        Case Break
+                    Case (iType = xsDatetime)
+                        If (iDim = 0) Get ComCreateDateTime of hoTypeBuilder to vType
+                        Else Move (ComCreateList(hoTypeBuilder, ComCreateDateTime(hoTypeBuilder))) to vType
+                        Case Break
+                    Case (iType = xsString)
+                        If (iDim = 0) Get ComCreateString of hoTypeBuilder to vType
+                        Else Move (ComCreateList(hoTypeBuilder, ComCreateString(hoTypeBuilder))) to vType
+                        Case Break
+                    Case (iType = xsStruct)
+                        Move (SearchArray(sParamTypeName, vStructs[0], Self, GET_CompareVariantStrings)) to iArrayIndex
+                        If (iDim = 0) Move vStructs[1][iArrayIndex] to vType
+                        Else Move (ComCreateList(hoTypeBuilder, vStructs[1][iArrayIndex])) to vType
+                        Case Break
+                    Case Else
+                        Error 300 ("The data type of the parameter " * sParamName * "(" + sParamTypeName + ")" * "in" * sMsgName * "is unsupported in Thriftly. Please choose a different data type. Program will now abort.")
+                        Abort
+                Case End
+                Send ComAddField of hoStructBuilder (iParamLoop+2) sParamName (ParameterDescription(hoDocObj, psServiceName(Self), sMsgName, sParamName)) vType True
+            Loop
+
+            // Now that we've processed all the parameters, it's time to create the function/procedure definition and deal with the return type.
+
+            Move (Remove(sMsgName, 1, 4)) to sMsgName  // this removes the get_ or msg_
+            Get InterfaceMessageParamTypeName of hoWS iMsgLoop iParamCount to sReturnType
+            Get InterfaceMessageParamType of hoWS iMsgLoop iParamCount to iType
+            Get InterfaceMessageParamName of hoWS iMsgLoop iParamCount to sParamName
+            Get InterfaceMessageParamDimCount of hoWS iMsgLoop iParamCount to iDim
+            Get ComCreatePrototype of hoStructBuilder to vPrototype
+            If (iType = -1) Begin
+                // This means we have a procedure, not a function, so no return type
+                Send ComAddProcedure to hoServiceBuilder (iMsgLoop+1) sMsgName (MethodDescription(hoDocObj, psServiceName(Self), sMsgName)) vPrototype iFlags
+            End
+            Else Begin
+                Case Begin
+                    Case (iType = xsBoolean or iType = xsBit)
+                        If (iDim = 0) Get ComCreateBool of hoTypeBuilder to vType
+                        Else Move (ComCreateList(hoTypeBuilder, ComCreateBool(hoTypeBuilder))) to vType
+                        Case Break
+                    Case (iType = xsUchar)
+                        If (iDim = 0) Get ComCreateByte of hoTypeBuilder to vType
+                        Else Move (ComCreateBinary(hoTypeBuilder)) to vType
+                        Case Break
+                    Case (iType = xsShort)
+                        If (iDim = 0) Get ComCreateInt16 of hoTypeBuilder to vType
+                        Else Move (ComCreateList(hoTypeBuilder, ComCreateInt16(hoTypeBuilder))) to vType
+                        Case Break
+                    Case (iType = xsInteger or iType = 26)  // Thriftly.x64 TEMPORARY code
+                        If (iDim = 0) Get ComCreateInt32 of hoTypeBuilder to vType
+                        Else Move (ComCreateList(hoTypeBuilder, ComCreateInt32(hoTypeBuilder))) to vType
+                        Case Break
+                    Case (iType = xsBigint)
+                        If (iDim = 0) Get ComCreateInt64 of hoTypeBuilder to vType
+                        Else Move (ComCreateList(hoTypeBuilder, ComCreateInt64(hoTypeBuilder))) to vType
+                        Case Break
+                    Case (iType = xsNumber or iType = xsDecimal)
+                        If (iDim = 0) Get ComCreateDecimal of hoTypeBuilder to vType
+                        Else Begin
+                            Error 301 ("The return type of the function" * sMsgName * "(" + sReturnType + "[ ])" * "is unsupported in Thriftly. Please consider using a REAL[ ] type instead. Program will now abort.")
+                            Abort
+                        End
+                        Case Break
+                    Case (iType = xsReal or iType = xsFloat)
+                        If (iDim = 0) Get ComCreateDouble of hoTypeBuilder to vType
+                        Else Move (ComCreateList(hoTypeBuilder, ComCreateDouble(hoTypeBuilder))) to vType
+                        Case Break
+                    Case (iType = xsDate)
+                        If (iDim = 0) Get ComCreateDate of hoTypeBuilder to vType
+                        Else Move (ComCreateList(hoTypeBuilder, ComCreateDate(hoTypeBuilder))) to vType
+                        Case Break
+                    Case (iType = xsDatetime)
+                        If (iDim = 0) Get ComCreateDateTime of hoTypeBuilder to vType
+                        Else Move (ComCreateList(hoTypeBuilder, ComCreateDateTime(hoTypeBuilder))) to vType
+                        Case Break
+                    Case (iType = xsString)
+                        If (iDim = 0) Get ComCreateString of hoTypeBuilder to vType
+                        Else Move (ComCreateList(hoTypeBuilder, ComCreateString(hoTypeBuilder))) to vType
+                        Case Break
+                    Case (iType = xsStruct)
+                        Move (SearchArray(sReturnType, vStructs[0], Self, GET_CompareVariantStrings)) to iArrayIndex
+                        If (iDim = 0) Move vStructs[1][iArrayIndex] to vType
+                        Else Move (ComCreateList(hoTypeBuilder, vStructs[1][iArrayIndex])) to vType
+                        Case Break
+                    Case Else
+                        Error 300 ("The return type of the function " * sMsgName * "(" + sReturnType + ")" * "is unsupported in Thriftly. Please choose a different data type. Program will now abort.")
+                        Abort
+                Case End
+    
+                Send ComAddFunction to hoServiceBuilder (iMsgLoop+1) sMsgName (MethodDescription(hoDocObj, psServiceName(Self), sMsgName)) vType (ReturnDescription(hoDocObj, psServiceName(Self), sMsgName)) vPrototype iFlags
+            End
+        Loop
+    End_Procedure
+
+    Procedure ServiceException String error_message ErrorData exception
+        String[] callstack
+        String sCallstack call loc
+        Variant vRuntime
+        Handle hoRuntime
+        
+        Get ComRuntime to vRuntime
+        Get Create U_cComIEvoRuntime to hoRuntime
+        Set pvComObject of hoRuntime to vRuntime
+
+        // We don't EVER want a callstack in these types of errors, so empty out the array
+        Move (ResizeArray(exception.CallStack, 0)) to exception.CallStack
+
+        CallStackDump sCallStack
+        Get StringToArray of Error_object_ID sCallStack C_CRLF to callstack
+        
+        // The Second item ([1]) in the array will be the function that threw the error
+        // since this function was called from there. The first 4 characters are always
+        // "GET_" or "MSG_", so we remove those. And then we want the name of the
+        // function or procedure, so cut that part out. We also want the "address" at
+        // the end which is the line of code that threw the exception.
+        Move (Remove(callstack[1], 1, 4)) to call
+        Move (Left(call, Pos(" ", call)-1)) to exception.CallStack[0]
+        Move (Right(call, length(call) - RightPos(" ", call))) to loc
+        Move (Integer(loc)) to exception.LineNumber
+        
+        // For Service Exceptions we always consider them "handled", so make sure it is marked that way
+        Move False to exception.Unhandled
+        
+        Send ComSetErrorInfoWithData of hoRuntime error_message exception
+
+        Set pvComObject of hoRuntime to (NullComObject())
+        Send Destroy_Object of hoRuntime
+    End_Procedure
+    
+    { Visibility=Private }
+    Procedure EventDispatcher Integer iMsgId String sMsgName Variant vParam1 Variant vParam2 Variant vParam3 Variant vParam4 ;
+                              Variant vParam5 Variant vParam6 Variant vParam7 Variant vParam8 Variant vParam9 Variant vParam10 ;
+                              Variant vParam11 Variant vParam12 Variant vParam13 Variant vParam14
+        String get_or_msg
+        Integer iType
+        Variant vElement
+        
+        // This very unusual line of code is to fix a bug where DataFlex loses the DATE4_STATE setting when in a reentrant
+        // windows message. The setting is restored after the com event finishes. This is based on customer report and 
+        // this thread:
+        //
+        // http://support.dataaccess.com/Forums/showthread.php?34372-This-is-how-users-can-enter-dates-with-2-digit-years
+        //
+        // Thank you Jorgen Munster for your sleuthing. - OLI
+        //
+        Set_Date_Attribute Date4_State to True
+        
+        Move Self to EVO_CURRENT_SERVICE
+        
+        If (num_arguments = 2) Begin
+            // this can only be a procedure with 2 argument, nothing returned, nothing sent
+            Send iMsgId  
+            Procedure_Return
+        End
+        Move (Left(sMsgName, 3)) to get_or_msg
+        
+        If (num_arguments = 3) Begin
+            If (get_or_msg = "get") Get iMsgId to vParam1
+            Else Send iMsgId vParam1
+            
+            Procedure_Return
+        End
+        If (num_arguments = 4) Begin
+            If (get_or_msg = "get") Get iMsgId vParam1 to vParam2
+            Else Send iMsgId vParam1 vParam2
+            
+            Procedure_Return 
+        End
+        If (num_arguments = 5) Begin
+            If (get_or_msg = "get") Get iMsgId vParam1 vParam2 to vParam3
+            Else Send iMsgId vParam1 vParam2 vParam3
+
+            Procedure_Return 
+        End
+        If (num_arguments = 6) Begin
+            If (get_or_msg = "get") Get iMsgId vParam1 vParam2 vParam3 to vParam4
+            Else Send iMsgId vParam1 vParam2 vParam3 vParam4
+            
+            Procedure_Return 
+        End
+        If (num_arguments = 7) Begin
+            If (get_or_msg = "get") Get iMsgId vParam1 vParam2 vParam3 vParam4 to vParam5
+            Else Send iMsgId vParam1 vParam2 vParam3 vParam4 vParam5
+            
+            Procedure_Return 
+        End
+        If (num_arguments = 8) Begin
+            If (get_or_msg = "get") Get iMsgId vParam1 vParam2 vParam3 vParam4 vParam5 to vParam6
+            Else Send iMsgId vParam1 vParam2 vParam3 vParam4 vParam5 vParam6
+            
+            Procedure_Return 
+        End
+        If (num_arguments = 9) Begin
+            If (get_or_msg = "get") Get iMsgId vParam1 vParam2 vParam3 vParam4 vParam5 vParam6 to vParam7
+            Else Send iMsgId vParam1 vParam2 vParam3 vParam4 vParam5 vParam6 vParam7
+            
+            Procedure_Return 
+        End
+        If (num_arguments = 10) Begin
+            If (get_or_msg = "get") Get iMsgId vParam1 vParam2 vParam3 vParam4 vParam5 vParam6 vParam7 to vParam8
+            Else Send iMsgId vParam1 vParam2 vParam3 vParam4 vParam5 vParam6 vParam7 vParam8
+            
+            Procedure_Return 
+        End
+        If (num_arguments = 11) Begin
+            If (get_or_msg = "get") Get iMsgId vParam1 vParam2 vParam3 vParam4 vParam5 vParam6 vParam7 vParam8 to vParam9
+            Else Send iMsgId vParam1 vParam2 vParam3 vParam4 vParam5 vParam6 vParam7 vParam8 vParam9
+            
+            Procedure_Return 
+        End
+        If (num_arguments = 12) Begin
+            If (get_or_msg = "get") Get iMsgId vParam1 vParam2 vParam3 vParam4 vParam5 vParam6 vParam7 vParam8 vParam9 to vParam10
+            Else Send iMsgId vParam1 vParam2 vParam3 vParam4 vParam5 vParam6 vParam7 vParam8 vParam9 vParam10
+            
+            Procedure_Return 
+        End
+        If (num_arguments = 13) Begin
+            If (get_or_msg = "get") Get iMsgId vParam1 vParam2 vParam3 vParam4 vParam5 vParam6 vParam7 vParam8 vParam9 vParam10 to vParam11
+            Else Send iMsgId vParam1 vParam2 vParam3 vParam4 vParam5 vParam6 vParam7 vParam8 vParam9 vParam10 vParam11
+            
+            Procedure_Return 
+        End
+        If (num_arguments = 14) Begin
+            If (get_or_msg = "get") Get iMsgId vParam1 vParam2 vParam3 vParam4 vParam5 vParam6 vParam7 vParam8 vParam9 vParam10 vParam11 to vParam12
+            Else Send iMsgId vParam1 vParam2 vParam3 vParam4 vParam5 vParam6 vParam7 vParam8 vParam9 vParam10 vParam11 vParam12
+            
+            Procedure_Return 
+        End
+        If (num_arguments = 15) Begin
+            If (get_or_msg = "get") Get iMsgId vParam1 vParam2 vParam3 vParam4 vParam5 vParam6 vParam7 vParam8 vParam9 vParam10 vParam11 vParam12 to vParam13
+            Else Send iMsgId vParam1 vParam2 vParam3 vParam4 vParam5 vParam6 vParam7 vParam8 vParam9 vParam10 vParam11 vParam12 vParam13
+            
+            Procedure_Return 
+        End
+        If (num_arguments = 16) Begin
+            If (get_or_msg = "get") Get iMsgId vParam1 vParam2 vParam3 vParam4 vParam5 vParam6 vParam7 vParam8 vParam9 vParam10 vParam11 vParam12 vParam13 to vParam14
+            Else Send iMsgId vParam1 vParam2 vParam3 vParam4 vParam5 vParam6 vParam7 vParam8 vParam9 vParam10 vParam11 vParam12 vParam13 vParam14
+            
+            Procedure_Return 
+        End
+    End_Procedure
+    
+    { Visibility=Private }
+    Procedure RegisterDynamicEvents
+        Handle hoWS
+        Integer iMsgCount iMsgLoop
+        String sMsgName
+        
+        Get phoBaseWebService to hoWS
+        Get InterfaceMessageCount of hoWS to iMsgCount
+        
+        For iMsgLoop from 0 to (iMsgCount-1)
+            Send RegisterComEvent (iMsgLoop+1) msg_EventDispatcher
+        Loop
+    End_Procedure
+
+    Function JWTPayload Returns Variant
+        Variant vPayload
+        Get JWTPayload of (Parent(Self)) to vPayload
+        Function_Return vPayload
+    End_Function
+    
+    Function JWSPayload Returns String
+        String sPayload
+        Get JWSPayload of (Parent(Self)) to sPayload
+        Function_Return sPayload
+    End_Function
+
+    Procedure Heartbeat 
+        Send Heartbeat of (Parent(Self)) 
+    End_Procedure
+
+End_Class

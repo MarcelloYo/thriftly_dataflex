@@ -1,0 +1,633 @@
+Use UI
+Use Thriftly.Interface.pkg
+Use Dferror.pkg
+#IF (!@ > 179)
+Use cTimer.pkg
+#ENDIF
+Use Winkern.pkg
+
+Use ThriftlyCommands.pkg
+Use cThriftlyDoc.pkg
+
+// So Dataflex has this long standing "feature" where strings in a table are
+// always padded to the length of the field. This is a pain when developing
+// APIs because using the file buffer is a bit easier to code than using the
+// DD buffer. So we provide a custom version of the move command that right 
+// trim's the first parameter if it's a string.
+#COMMAND MOVERT R "TO" R .
+    #IFTYPE !1 "S"
+        Move (Rtrim(!1)) to !3
+    #ELSE
+        Move !1 to !3
+    #ENDIF
+#ENDCOMMAND
+
+Struct ServiceErrorType
+    String serviceName
+    String customErrorStructName
+    Variant errorStruct
+End_Struct
+
+// This global is unfortunate but needed so that when errors are generated
+// we know which Evolution runtime to send details to.
+Global_Variable Integer EVO_CURRENT_SERVICE
+
+Use cThriftlyErrorSystem.pkg
+
+#IFNDEF C_ErrorCaption
+Define C_ErrorCaption for "*CAPTION*="
+#ENDIF
+
+#IFNDEF get_GetTickCount
+External_Function GetTickCount "GetTickCount" Kernel32.dll Returns Integer
+#ENDIF
+
+#IFNDEF get_IsDebuggerPresent
+External_Function  IsDebuggerPresent 'IsDebuggerPresent'  Kernel32.dll ;
+    Returns Boolean
+#ENDIF
+
+Use SoapConstants.pkg
+
+// The SOAP Constants are missing Boolean (Bit type, not logical type)
+// So we define it ourselves (FMAC defines it "ARGBIT = 16")
+#IFNDEF xsBit
+Define xsBit for 16
+#ENDIF
+
+Use Variant.pkg
+Use Flexml.pkg
+Use WinKern.pkg
+Use cThriftlyService.pkg
+
+Struct tMSG
+    Handle hWnd
+    Integer Message
+    DWord wParam
+    #IFDEF IS$WIN64
+    DWord pad1
+    #ENDIF
+    DWord lParam
+    #IFDEF IS$WIN64
+    DWord pad2
+    #ENDIF
+    DWord Time
+    #IFDEF IS$WIN64
+    DWord pad3
+    #ENDIF
+    Integer XCoord
+    #IFDEF IS$WIN64
+    DWord pad4
+    #ENDIF
+    Integer YCoord
+    #IFDEF IS$WIN64
+    DWord pad5
+    #ENDIF
+End_Struct
+
+//Struct tMSG
+//    Handle hWnd
+//    Integer Message
+//    DWord wParam
+//    DWord lParam
+//    DWord Time
+//    Integer XCoord
+//    Integer YCoord
+//End_Struct
+
+#IFNDEF GET_PeekMessage
+External_Function PeekMessage "PeekMessageA" User32.dll ;
+    Pointer lpMsgStruct;
+    Handle hWnd ;
+    UInteger MsgFilterMin ;
+    UInteger MsgFilterMax ;
+    UInteger RemoveMsg ;
+    Returns Integer
+#ENDIF
+
+                                                       
+#IFNDEF GET_GetMessage
+  #IFDEF IS$WIN64
+    External_Function GetMessage "GetMessageW" User32.dll ;
+        Pointer lpMsgStruct;
+        Handle hWnd ;
+        UInteger MsgFilterMin ;
+        UInteger MsgFilterMax ;
+        Returns Integer
+  #ELSE
+    External_Function GetMessage "GetMessageA" User32.dll ;
+        Pointer lpMsgStruct;
+        Handle hWnd ;
+        UInteger MsgFilterMin ;
+        UInteger MsgFilterMax ;
+        Returns Integer
+  #ENDIF
+#ENDIF
+
+#IFNDEF GET_TranslateMessage
+External_Function TranslateMessage "TranslateMessage" User32.dll Pointer lpMsg Returns Integer
+#ENDIF
+
+#IFNDEF GET_DispatchMessageA
+External_Function DispatchMessage "DispatchMessageA" User32.dll Pointer lpMsg Returns Integer
+#ENDIF
+
+//External_Function DllCanUnloadNow "DllCanUnloadNow" C:\Evolution\Evolution.Interface\Release\Evolution.Interface.dll Returns Integer
+
+Class cThriftlyServer is a Array //cObject
+    
+    Procedure Construct_Object
+        { Visibility=Private }
+        Property Handle phoGenericAutomation (Create(Self, U_DfComAutomationObject))
+        
+        { Visibility=Private }
+        Property Handle phOldErrorObject
+        
+        { Visibility=Private }
+        Property Handle phoServer
+        
+        { Visibility=Private }
+        Property Handle[] phoServices
+        
+        { Visibility=Private }
+        Property Variant[][] pvStructs
+        
+        { Visibility=Private }
+        Property Handle phoErrorSys (Create(Self, U_cThriftlyErrorSystem))
+        
+        { Visibility=Private }
+        Property ServiceErrorType[] pServicesCustomErrorTypes
+        
+        Forward Send Construct_Object
+    End_Procedure
+    
+    { Visibility=Private }
+    Procedure RegisterService Handle hoService
+        Handle[] services
+        
+        Get phoServices to services
+        Move hoService to services[SizeOfArray(services)]
+        Set phoServices to services
+    End_Procedure
+
+    { Visibility=Private }
+    Function CompareVariantStrings Variant val1 Variant val2 Returns Integer
+        If (String(val1) = String (val2)) Function_Return (EQ)
+        Function_Return (0)
+    End_Function
+
+    { Visibility=Private }
+    Function ProcessType Handle hoBaseStructs Handle hoStructNode Variant[][] ByRef vStructs Handle hoEvoInterface Handle hoStructBuilder Handle hoTypeBuilder Returns Variant
+        String sStructName sElementName sElementType sElementArrayCount sElementTypeRef
+        String sErrorMessage
+        Integer iNodeListLength iNode iArrayIndex iStructNode
+        Handle hoNode hoChildStruct
+        Variant vStruct vThisStructBuilder vType
+        Variant[] temp
+        Handle hoDocObj
+        Move (oThriftlyDocumentation(Self)) to hoDocObj
+
+        Get AttributeValue of hoStructNode "name" to sStructName
+        
+        // Let's see if this Struct is already defined, if it is, just return it
+        Send Ignore_Error of Error_Object_Id 4509
+        Move False to err
+        Move vStructs[0] to temp
+        If (not(Err)) Begin
+            Send Trap_Error of Error_Object_Id 4509
+            Move (SearchArray(sStructName, vStructs[0], Self, GET_CompareVariantStrings)) to iArrayIndex
+            If (iArrayIndex > -1) Function_Return vStructs[1][iArrayIndex]
+        End
+        
+        Send Trap_Error of Error_Object_Id 4509
+        
+        Set pvComObject of hoStructBuilder to (ComNewStruct(hoEvoInterface))
+        
+        Get ElementNodes of hoStructNode "*" to hoStructNode
+        Get NodeListLength of hoStructNode to iNodeListLength
+        
+        For iNode from 0 to (iNodeListLength-1)
+            Get CollectionNode of hoStructNode iNode to hoNode
+            Get AttributeValue of hoNode "name" to sElementName
+            Get AttributeValue of hoNode "type" to sElementType
+            Get AttributeValue of hoNode "arrayDimCount" to sElementArrayCount
+            Get AttributeValue of hoNode "typeRef" to sElementTypeRef
+            
+            // If this class of data type is an array, then go through the supported types to map to Evolution.
+            // If the type isn't here AND it doesn't appear to be a struct, then throw a runtime message and quit.
+
+            Case Begin
+                Case (sElementType = "boolean")
+                    Move (ComCreateBool(hoTypeBuilder)) to vType
+                    If (sElementArrayCount <> "") Move (ComCreateList(hoTypeBuilder, vType)) to vType
+                    Case Break
+                Case (sElementType = "uchar" or sElementType = "char")
+                    If (sElementArrayCount <> "" and sElementType = "char") Begin
+                        Error 301 ("The data type of the element" * sElementName * "(" + sElementType + "[ ])" * "in" * sStructName * "is unsupported in Thriftly. Please consider using a REAL[ ] type instead. Program will now abort.")
+                        Abort
+                    End
+                    If (sElementArrayCount <> "") Move (ComCreateBinary(hoTypeBuilder)) to vType
+                    Else Move (ComCreateByte(hoTypeBuilder)) to vType
+                    Case Break
+                Case (sElementType = "short")
+                    Move (ComCreateInt16(hoTypeBuilder)) to vType
+                    If (sElementArrayCount <> "") Move (ComCreateList(hoTypeBuilder, vType)) to vType
+                    Case Break
+                Case (sElementType = "integer")
+                    Move (ComCreateInt32(hoTypeBuilder)) to vType
+                    If (sElementArrayCount <> "") Move (ComCreateList(hoTypeBuilder, vType)) to vType
+                    Case Break
+                Case (sElementType = "bigint")
+                    Move (ComCreateInt64(hoTypeBuilder)) to vType
+                    If (sElementArrayCount <> "") Move (ComCreateList(hoTypeBuilder, vType)) to vType
+                    Case Break
+                Case (sElementType = "number" or sElementType = "decimal")
+                    If (sElementArrayCount <> "") Begin
+                        Error 301 ("The data type of the element" * sElementName * "(" + sElementType + "[ ])" * "in" * sStructName * "is unsupported in Thriftly. Please consider using a REAL[ ] type instead. Program will now abort.")
+                        Abort
+                    End
+                    Else Move (ComCreateDecimal(hoTypeBuilder)) to vType
+                    Case Break
+                Case (sElementType = "real" or sElementType = "float")
+                    Move (ComCreateDouble(hoTypeBuilder)) to vType
+                    If (sElementArrayCount <> "") Move (ComCreateList(hoTypeBuilder, vType)) to vType
+                    Case Break
+                Case (sElementType = "date")
+                    Move (ComCreateDate(hoTypeBuilder)) to vType
+                    If (sElementArrayCount <> "") Move (ComCreateList(hoTypeBuilder, vType)) to vType
+                    Case Break
+                Case (sElementType = "datetime")
+                    Move (ComCreateDateTime(hoTypeBuilder)) to vType
+                    If (sElementArrayCount <> "") Move (ComCreateList(hoTypeBuilder, vType)) to vType
+                    Case Break
+                Case (sElementType = "string")
+                    Move (ComCreateString(hoTypeBuilder)) to vType
+                    If (sElementArrayCount <> "") Move (ComCreateList(hoTypeBuilder, vType)) to vType
+                    Case Break
+                Case (sElementTypeRef = "")
+                    Error 300 ("The data type of the element" * sElementName * "(" + sElementType + "[ ])" * "in" * sStructName * "is unsupported in Thriftly. Please choose a different data type. Program will now abort.")
+                    Abort
+                    Case Break
+                Case Else // this means it's probably a struct
+                    Move sElementTypeRef to sElementType
+                    // Let's see if this Struct is already defined, if it is, search it
+                    Send Ignore_Error of Error_Object_Id 4509
+                    Move False to err
+                    Move vStructs[0] to temp
+                    If (not(Err)) Begin
+                        Send Trap_Error of Error_Object_Id 4509
+                        Move (SearchArray(sElementType, vStructs[0], Self, GET_CompareVariantStrings)) to iArrayIndex
+                    End
+                    Else Move -1 to iArrayIndex
+                    If (iArrayIndex > -1) Begin
+                        Move vStructs[1][iArrayIndex] to vType
+                        If (sElementArrayCount <> "") Move (ComCreateList(hoTypeBuilder, vType)) to vType
+                    End
+                    Else Begin
+                        // Save the Struct Variant we're working on
+                        Get pvComObject of hoStructBuilder to vThisStructBuilder
+                        Get FindNode of hoBaseStructs (SFormat("//ns:struct[@name='%1']", sElementType)) to hoChildStruct
+                        Get ProcessType hoBaseStructs hoChildStruct (&vStructs) hoEvoInterface hoStructBuilder hoTypeBuilder to vStruct
+                        Set pvComObject of hoStructBuilder to vThisStructBuilder
+                        Move vStruct to vType
+                        If (sElementArrayCount <> "") Move (ComCreateList(hoTypeBuilder, vType)) to vType
+                    End
+            Case End
+
+            Send ComAddField of hoStructBuilder (iNode + 1) sElementName (StructElementDescription(hoDocObj, sStructName, sElementName)) vType False
+        Loop
+        
+        Move sStructName to vStructs[0][(SizeOfArray(vStructs[0]))]
+        Move (ComCreateStruct(hoStructBuilder, sStructName, StructDescription(hoDocObj, sStructName))) to vStruct
+        Move vStruct to vStructs[1][(SizeOfArray(vStructs[1]))]
+        
+        Function_Return vStruct
+    End_Function
+
+    { Visibility=Private }
+    Function ProcessTypes Handle hoWS Handle hoEvoInterface Handle hoStructBuilder Handle hoTypeBuilder Returns Variant[][]
+        String sTypesXML sElementName sElementType sElementArrayCount sStructName 
+        Handle hoXML hoRoot hoBaseStructs hoStructNode hoNode
+        Integer iNodeListLength iNode iStructNodeListLength iStructNode iArrayIndex sets_size cnt
+        Boolean bRetval
+        Variant[][] vStructs
+        Variant vStruct
+        
+        ServiceErrorType[] sets
+        Get pServicesCustomErrorTypes to sets
+        Move (SizeOfArray(sets)-1) to sets_size
+        
+        Get pvStructs to vStructs
+        Get InterfaceTypeDefinitions of hoWS "ns" "http://tempuri.org" to sTypesXML
+        
+        Get Create U_cXMLDOMDocument to hoXML
+        Get LoadXML of hoXML sTypesXML to bRetval
+        If (bRetval) Begin
+            #IF (!@>=151)
+                Set psSelectionNamespaces of hoXML to "xmlns:ns='http://tempuri.org'"
+            #ENDIF
+            Get DocumentElement of hoXML to hoRoot
+            Get ElementNodes of hoRoot "ns:struct" to hoBaseStructs
+            Get NodeListLength of hoBaseStructs to iStructNodeListLength
+            
+            While (iStructNode < iStructNodeListLength and iStructNodeListLength > 0)
+                Get CollectionNode of hoBaseStructs iStructNode to hoStructNode
+                Get AttributeValue of hoStructNode "name" to sStructName
+
+                Get ProcessType hoBaseStructs hoStructNode (&vStructs) hoEvoInterface hoStructBuilder hoTypeBuilder to vStruct
+                
+                For cnt from 0 to sets_size
+                    If (uppercase(sets[cnt].customErrorStructName) = uppercase(sStructName)) Move vStruct to sets[cnt].errorStruct
+                Loop
+
+                Increment iStructNode    
+            Loop
+        End
+        Set pServicesCustomErrorTypes to sets
+        Set pvStructs to vStructs
+        
+        Function_Return vStructs
+    End_Function
+    
+    { Visibility=Private }
+    Function CreateErrorStructure Handle hoStructBuilder Handle hoTypeBuilder Handle hoEvoInterface Returns Variant
+        Variant vStruct
+        Set pvComObject of hoStructBuilder to (ComNewStruct(hoEvoInterface))
+        
+        Send ComAddField of hoStructBuilder 1 "Unhandled"   "" (ComCreateBool(hoTypeBuilder)) True
+        Send ComAddField of hoStructBuilder 2 "ErrorNumber" "" (ComCreateInt32(hoTypeBuilder)) True
+        Send ComAddField of hoStructBuilder 3 "LineNumber"  "" (ComCreateInt32(hoTypeBuilder)) True
+        Send ComAddField of hoStructBuilder 4 "IsCritical"  "" (ComCreateBool(hoTypeBuilder)) True
+        Send ComAddField of hoStructBuilder 5 "Value"       "" (ComCreateString(hoTypeBuilder)) True
+        Send ComAddField of hoStructBuilder 6 "Description" "" (ComCreateString(hoTypeBuilder)) False
+        Send ComAddField of hoStructBuilder 7 "Caption"     "" (ComCreateString(hoTypeBuilder)) False
+        Send ComAddField of hoStructBuilder 8 "CallStack"   "" (ComCreateList(hoTypeBuilder, ComCreateString(hoTypeBuilder))) False
+        
+        Function_Return (ComCreateStruct(hoStructBuilder, "ErrorData", ""))
+    End_Function
+    
+    // Event
+    Procedure OnPreSimpleServerStart Handle hoSettings
+    End_Procedure
+    
+    Procedure StartServer Boolean bSimpleServer
+        Handle hoEvoInterface hoServiceBuilder hoStructBuilder hoTypeBuilder
+        Handle hoPrototype hoStruct hoServer hoService hoServiceRuntime hoEvoService 
+        Handle[] services
+        Variant vServicesCollection vErrorStruct
+        Handle hoServicesCollection
+        Handle hoTimer
+        Handle hoSettings
+        Variant vSettings
+        Variant[][] vStructs
+        String sCurrDir
+        Integer iter
+        ServiceErrorType[] sets
+        Integer sets_size
+        Integer cnt
+        Variant vAppliedErrorStruct
+        
+        // So the ErrorSystem class has this nasty bug/feature where it overwrites Error_Object_Id
+        // during construct_object...so anytime another error object is instantiated it replaces
+        // the prior error object. Because this is taking place in a procedure that MUST be forwarded
+        // we can't fix the behaviour in our subclass. Most developers probably don't care about it,
+        // but in our case we DON'T want our error class to kick in until Evolution has been
+        // start successfully. We want startup errors to use the standard error handler. So, after
+        // creating our error object and putting it in the property above, we reset the error
+        // object back to the standard one.
+        Move Error_Info_Object to Error_Object_Id        
+        
+        Get Create U_cComEvoInterface to hoEvoInterface
+        Send CreateComObject of hoEvoInterface
+
+        Get Create U_cComIEvoServiceBuilder to hoServiceBuilder
+        Get Create U_cComIEvoStructBuilder to hoStructBuilder
+        Get Create U_cComIEvoTypeBuilder to hoTypeBuilder
+        Set pvComObject of hoTypeBuilder to (ComNewType(hoEvoInterface))
+        
+        // We add a timer so that the GetMessage loop down below doesn't hang indefinitely and 
+        // we get a chance to check for things that should cause the app to quit.
+//#IF (!@ > 179)
+        Get Create U_cTimer to hoTimer
+        Set piTimeout of hoTimer to 2
+        Set pbEnabled of hoTimer to True
+//#ENDIF
+
+        // Because the error structure isn't "used" by any call, the code used to analyze a structure won't
+        // work here since DF doesn't know about this structure via the BaseWebService class. So instead
+        // we have to describe the structure defined at the top of this file.
+        Get CreateErrorStructure hoStructBuilder hoTypeBuilder hoEvoInterface to vErrorStruct
+        
+        // We now add this to our list of structs because custom error structs will most likely
+        // embed an ErrorData struct (although not technically required). By adding it here, when
+        // ProcessType is called and recursively analyzes other structs, if those structs include
+        // ErrorData, they won't try to add another copy of it causing an error.
+        Move "ErrorData" to vStructs[0][(SizeOfArray(vStructs[0]))]
+        Move vErrorStruct to vStructs[1][(SizeOfArray(vStructs[1]))]
+        Set pvStructs to vStructs
+            
+        Get phoServices to services
+        For iter from 0 to (SizeOfArray(services)-1)
+            Move services[iter] to hoEvoService
+            
+            Send CreateComObject of hoEvoService
+            
+            Set pvComObject of hoServiceBuilder to (ComNewService(hoEvoInterface))
+            Send ProcessInterfaces of services[iter] hoEvoInterface hoServiceBuilder hoStructBuilder hoTypeBuilder
+            Get Create U_cComIEvoService to hoService
+            
+            // If we have a custom error structure, make sure to use it
+            Get pServicesCustomErrorTypes to sets
+            Move (SizeOfArray(sets)-1) to sets_size
+            Move vErrorStruct to vAppliedErrorStruct
+            For cnt from 0 to sets_size
+                If (sets[cnt].serviceName = psServiceName(hoEvoService)) Move sets[cnt].errorStruct to vAppliedErrorStruct
+            Loop
+            
+            Set pvComObject of hoService to (ComCreateServiceWithCustomExceptionData(hoServiceBuilder, psServiceName(hoEvoService), "", vAppliedErrorStruct))
+
+            Send RegisterDynamicEvents of hoEvoService          
+
+            Set ComService of hoEvoService to (pvComObject(hoService))
+            If (iter = 0) Begin
+                Get ComWrap of hoEvoService to vServicesCollection
+                Get Create U_cComIEvoServiceRuntimeCollection to hoServicesCollection
+                Set pvComObject of hoServicesCollection to vServicesCollection
+            End
+            Else Begin
+                Send ComAdd of hoServicesCollection (pvComObject(hoEvoService))
+            End
+            
+            Send ReleaseComObject of hoServiceBuilder
+        Loop
+        
+        Send ReleaseComObject of hoTypeBuilder
+        Send ReleaseComObject of hoStructBuilder
+        Send ReleaseComObject of hoEvoInterface
+        
+        If (IsDebuggerPresent()) Begin
+            If (num_arguments = 1 AND bSimpleServer) Begin
+                Get Create U_cComEvoSimpleServer to hoServer
+                Send CreateComObject of hoServer
+                Get ComSettings of hoServer to vSettings
+                Get Create U_cComIEvoSimpleServerSettings to hoSettings
+                Set pvComObject of hoSettings to vSettings
+                
+                Set ComIncomingJwtConfigurations of hoSettings to "none"
+                Set ComOutgoingJwtConfiguration of hoSettings to "none"
+                Set ComTcpPort of hoSettings to 8080
+                Set ComServerProtocol of hoSettings to OLEEVO_JSON_RPC
+                Set ComServerTransport of hoSettings to OLEEVO_TRANSPORT_HTTP
+                Set ComLocalizeDatetime of hoSettings to True
+                Set ComStringEncoding of hoSettings to OLEEVO_ENCODING_ANSI
+                
+                Send OnPreSimpleServerStart hoSettings
+                Send ComStart of hoServer (pvComObject(hoServicesCollection)) OLEEVO_RECORDS_AND_ARRAYS
+            End
+            Else Begin
+                Get Create U_cComEvoConsoleConnection to hoServer
+                Send CreateComObject of hoServer
+                Send ComConnect of hoServer (pvComObject(hoServicesCollection)) OLEEVO_RECORDS_AND_ARRAYS
+            End
+        End
+        Else Begin
+            Send Ignore_Error of Error_Object_Id 4399
+            Get Create U_cComEvoDispatchConnection to hoServer
+            Send CreateComObject of hoServer
+            
+            Send ComConnect of hoServer (pvComObject(hoServicesCollection)) OLEEVO_RECORDS_AND_ARRAYS
+            If ((Err) and LastErr = 4399) Begin
+                Get Create U_cComEvoConsoleConnection to hoServer
+                Send CreateComObject of hoServer
+                Send ComConnect of hoServer (pvComObject(hoServicesCollection)) OLEEVO_RECORDS_AND_ARRAYS
+            End
+            Send Trap_Error of Error_Object_Id 4399
+        End
+        
+        Set phoServer to hoServer
+        Set phOldErrorObject to Error_Object_Id
+        Move (phoErrorSys(Self)) to Error_Object_Id
+
+        // We have to run our own message loop so that DF stays running. Pretty standard stuff here...GetMessage 
+        // will pause waiting for something to come in and then do the standard Translate->Dispatch cycle and go 
+        // back to sleep.
+        tMSG msg
+        Move 0 to msg.hwnd
+        Integer retval
+        Integer ticks elapsed_ticks
+        Move 0 to ticks
+        
+        While (True)
+            Move (GetMessage(AddressOf(msg), 0, 0, 0)) to retval
+            If (retval > 0) Begin
+                Move ((GetTickCount()) - ticks) to elapsed_ticks
+                If ((elapsed_ticks > 1500) or elapsed_ticks < 0) Begin
+                    Move (GetTickCount()) to ticks
+                    If (not(ComIsConnected(hoServer))) Begin
+                        Abort
+                    End
+                End
+                Move (TranslateMessage(AddressOf(msg))) to windowindex
+                Move (DispatchMessage(AddressOf(msg))) to windowindex
+            End
+            Else Abort
+        Loop
+        
+        Abort
+    End_Procedure
+    
+    Function JWTPayload Returns Variant
+        Variant vRuntime vPayload
+        Handle hoRuntime hoEvoService
+        Handle[] services
+        Integer iter
+        String stokenJWS
+                
+        // Search the Service which has the active JWT
+        Get phoServices to services
+        For iter from 0 to (SizeOfArray(services)-1)
+            Move services[iter] to hoEvoService
+
+            Get ComRuntime of hoEvoService to vRuntime
+            Get Create U_cComIEvoRuntime to hoRuntime
+            Set pvComObject of hoRuntime to vRuntime
+            
+            // Look first for JWS
+            Move "" to stokenJWS
+            Get ComJWS of hoRuntime to stokenJWS
+            If (stokenJWS <> "") Begin
+                // Retrieve JWT and return
+                Get ComJWT of hoRuntime to vPayload
+                Move (SizeOfArray(services)) to iter
+            End
+
+            Set pvComObject of hoRuntime to (NullComObject())
+            Send Destroy_Object of hoRuntime
+        Loop                                                       
+                        
+        Function_Return vPayload
+    End_Function
+                        
+    Function JWSPayload Returns Variant
+        Variant vRuntime
+        Handle hoRuntime hoEvoService
+        Handle[] services
+        Integer iter
+        String sPayload
+                
+        // Search the Service which has the active JWT                
+        Get phoServices to services
+        For iter from 0 to (SizeOfArray(services)-1)
+            Move services[iter] to hoEvoService
+
+            Get ComRuntime of hoEvoService to vRuntime
+            Get Create U_cComIEvoRuntime to hoRuntime
+            Set pvComObject of hoRuntime to vRuntime
+            
+            // Retrieve JWS and return            
+            Move "" to sPayload
+            Get ComJWS of hoRuntime to sPayload
+            If (sPayload <> "") Begin
+                Move (SizeOfArray(services)) to iter
+            End
+
+            Set pvComObject of hoRuntime to (NullComObject())
+            Send Destroy_Object of hoRuntime
+        Loop                                                       
+                        
+        Function_Return sPayload
+    End_Function
+       
+    Procedure Heartbeat
+        Variant vRuntime
+        Handle hoRuntime hoEvoService
+        Handle[] services
+        
+        Get phoServices to services
+        Move services[0] to hoEvoService
+        Get ComRuntime of hoEvoService to vRuntime
+        Get Create U_cComIEvoRuntime to hoRuntime
+        Set pvComObject of hoRuntime to vRuntime            
+        
+        Send ComHeartBeat of hoRuntime
+
+        Set pvComObject of hoRuntime to (NullComObject())
+        Send Destroy_Object of hoRuntime        
+    End_Procedure
+    
+    { MethodType=Property }
+    Procedure Set pbErrorsIncludeStackTrace Boolean bValue
+        Handle hoErrorSys
+        
+        Get phoErrorSys to hoErrorSys
+        Set pbErrorsIncludeStackTrace of hoErrorSys to bValue
+    End_Procedure
+    
+    { MethodType=Property }
+    Function pbErrorsIncludeStackTrace Returns Boolean
+        Handle hoErrorSys
+        
+        Get phoErrorSys to hoErrorSys
+        Function_Return (pbErrorsIncludeStackTrace(hoErrorSys))
+    End_Function
+End_Class

@@ -1,0 +1,150 @@
+Use cThriftlyService.pkg
+
+Struct tAllPrimitives
+    Boolean bool_val
+    Char char_val
+    Short short_val
+    Integer int_val
+    BigInt bigint_val
+    Number num_val
+    Date date_val
+    DateTime datetime_val
+    String string_val
+End_Struct
+
+Struct tPrimitiveArrays
+    Boolean[] bool_val
+    Short[] short_val
+    Integer[] int_val
+    BigInt[] bigint_val
+    Real[] num_val
+    Date[] date_val
+    DateTime[] datetime_val
+    String[] string_val
+End_Struct
+
+Struct tStructOfStructs
+    tAllPrimitives primitive
+    tPrimitiveArrays primitive_arrays
+End_Struct
+
+Object oTestStructs is a cThriftlyService
+    Set psServiceName to "Structs"
+
+    {Published=True}
+    Function GetPrimitiveStruct Returns tAllPrimitives
+        tAllPrimitives prims
+        DateTime dtNow
+        Move (CurrentDateTime()) to dtNow
+        Move (Random(1)) to prims.bool_val
+        Move (DateGetSecond(dtNow)) to prims.char_val
+        Move (DateGetDayOfYear(dtNow)) to prims.short_val
+        Move ((DateGetDayOfYear(dtNow) * 24 * 60 * 60) + (DateGetHour(dtNow) * 60 * 60) + (DateGetMinute(dtNow) * 60) + DateGetSecond(dtNow)) to prims.int_val
+        Move ((prims.int_val * 1000) + DateGetMillisecond(dtNow)) to prims.bigint_val
+        Move (Number(prims.int_val) + (Number(DateGetMillisecond(dtNow))/1000.0)) to prims.num_val
+        Move dtNow to prims.date_val
+        Move dtNow to prims.datetime_val
+        Move dtNow to prims.string_val
+        
+        Function_Return prims
+    End_Function
+    
+    {Published=True}
+    Function TestPrimitiveStruct tAllPrimitives primitive_struct Returns tAllPrimitives
+        DateTime dtNow
+        Move (CurrentDateTime()) to dtNow
+        Move (not(primitive_struct.bool_val)) to primitive_struct.bool_val
+        Move (128 min (primitive_struct.char_val + Random(64))) to primitive_struct.char_val
+        Move (32767 min (primitive_struct.short_val + Random(8192))) to primitive_struct.short_val
+        Move (2147483647 min (primitive_struct.int_val + Random(536870912))) to primitive_struct.int_val
+        Move (primitive_struct.bigint_val * Random(256)) to primitive_struct.bigint_val
+        Move (primitive_struct.date_val + Random(30)) to primitive_struct.date_val
+        Move (dtNow + Random(365)) to primitive_struct.datetime_val
+        Move (String(dtNow + Random(365)) + " - " + primitive_struct.string_val) to primitive_struct.string_val
+        
+        Function_Return primitive_struct
+    End_Function
+    
+    Procedure MovePrimToArrElement tAllPrimitives prim tPrimitiveArrays ByRef primarr Integer i
+        Move (not(prim.bool_val)) to primarr.bool_val[i]
+        Move (prim.short_val+i) to primarr.short_val[i]
+        Move (prim.int_val+i) to primarr.int_val[i]
+        Move (prim.bigint_val+i) to primarr.bigint_val[i]
+        Move (prim.num_val+Number(i)) to primarr.num_val[i]
+        Move (prim.date_val+i) to primarr.date_val[i]
+        Move (prim.datetime_val) to primarr.datetime_val[i]
+        Move (prim.string_val + " i = " + String(i)) to primarr.string_val[i]
+    End_Function
+
+    {Published=True}
+    Function GetPrimitiveArraysStruct Returns tPrimitiveArrays
+        tPrimitiveArrays primarr
+        tAllPrimitives prim
+        Integer i
+        
+        For i from 0 to 9
+            Get GetPrimitiveStruct to prim
+            Send MovePrimToArrElement prim (&primarr) i
+        Loop
+        Function_Return primarr
+    End_Function
+
+    {Published=True}
+    Function GetStructOfStructs Returns tStructOfStructs
+        tStructOfStructs strofstr
+        
+        Get GetPrimitiveStruct to strofstr.primitive
+        Get GetPrimitiveArraysStruct to strofstr.primitive_arrays
+        Function_Return strofstr
+    End_Function
+    
+    {Published=True}
+    Function GetArrayOfStructs tAllPrimitives[] primitives Returns tAllPrimitives[]
+        tAllPrimitives[] prims
+        Integer i
+        
+        For i from 0 to 9
+            Get GetPrimitiveStruct to prims[i]
+        Loop
+        
+        Function_Return prims
+    End_Function
+    
+    {Published=True}
+    Function AddStrings String first_str String second_str Returns String
+        token toke
+        Get JWTPayload to toke
+        
+        If (toke.level >= 3) Begin
+            Function_Return (first_str + second_str)
+        End
+        Else Error 300 (SFormat("Sorry, this function requires level %1 access, you only have level %2 access", 3, toke.level))
+    End_Function    
+    
+    {Published=True}
+    Function JWS Returns String
+        token toke
+        String stoke
+        Get JWTPayload to toke
+        
+        If (toke.level >= 4) Begin
+            Get JWSPayload to stoke
+            Function_Return (stoke)
+        End
+        Else Error 300 (SFormat("Sorry, this function requires level %1 access, you only have level %2 access", 4, toke.level))
+    End_Function   
+    
+    {AuthMethod=True}
+    Function AuthMethod Integer iMethodID String sMethodName token toke Returns token
+        TimeSpan expir
+        If (CurrentDateTime() < toke.expires_at) Begin
+            Move (DateSetMinute(expir, 30)) to expir
+            Move (CurrentDateTime() + expir) to toke.expires_at
+            Function_Return toke
+        End
+        Else Error 300 "Your login has expired, please login again."
+    End_Function    
+    
+End_Object
+
+

@@ -1,0 +1,356 @@
+//Thriftly documentation. 
+
+Struct tDocumentCommand
+    String sType 
+    String sDesc
+    String sElementName
+End_Struct
+
+Object oThriftlyDocumentation is a cObject
+    Property Boolean pisError
+    
+    Procedure Error_Report Integer iErrNum Integer iErrLine String sErrText
+        Set pisError to (True) 
+    End_Procedure
+    
+    Function ImageNumber String sImage Returns Integer 
+        Integer hErrObj
+        Integer iReturn 
+
+        Move Error_Object_Id to  hErrObj
+        Move (Self) to Error_Object_Id 
+        Set pisError to False 
+        Move (Eval(sImage+".N")) to iReturn 
+        If (pisError(Self)) Move -1 to iReturn 
+        Move hErrObj to Error_Object_Id 
+        
+        Function_Return iReturn 
+    End_Function
+
+    Function ImageDataAsArray Integer iImageNo Returns String[]
+        String[] aLines 
+        String sReturn 
+        Integer iCh 
+        String sLine 
+        
+        Move (Seq_New_Channel()) to iCh 
+        Direct_Input channel iCh ("image:"+String(iImageNo))
+        While (not(SeqEof))   
+            Readln sLine 
+            If (not(SeqEof)) Move sLine to aLines[SizeOfArray(aLines)]
+        Loop 
+        Close_Input iCh 
+        Send Seq_Release_Channel iCh 
+        
+        Function_Return aLines  
+    End_Function
+    
+    Function ImageToLines String sImageName Returns String[]
+        String[] aLines 
+        Integer iImage 
+        Get ImageNumber sImageName to iImage
+        If (iImage>0) Get ImageDataAsArray iImage to aLines
+        
+        Function_Return aLines 
+    End_Function
+
+    Function ImageText String sObject String sMethod Returns String[]
+        String[] aLines 
+        String sImageName
+        Integer iImage
+        
+        Move (lowercase(sMethod)) to sMethod 
+        If ((Pos("get_",sMethod))=1) Move (Mid(sMethod,(Length(sMethod)),5)) to sMethod 
+        If ((Pos("msg_",sMethod))=1) Move (Mid(sMethod,(Length(sMethod)),5)) to sMethod 
+        
+        Move (sObject+"."+sMethod) to sImageName 
+        Move (ImageToLines(Self,sImageName)) to aLines 
+
+        Function_Return aLines 
+    End_Function
+    
+    Function RemoveInitialChars String sInp Integer iIndent Returns String 
+        Integer iStartPos 
+        Function_Return (Mid(sInp,(Length(sInp)),iIndent))
+        //Function_Return sInp 
+    End_Function
+    
+    Function hasNameParameter String sName Returns Boolean 
+        Move (Lowercase(sName)) to sName 
+        If (sName="param") Function_Return True 
+        Else Function_Return False 
+    End_Function
+    
+    Function LineStartPos String sInp Returns Integer 
+        Char[] myCharArray
+        Address pStr
+        Integer iMax
+        Integer iPos 
+        String sSkipNext
+        
+        If ((Pos("//",sInp))=0) Function_Return 0 
+        
+        Move (Replace("//",sInp,"  ")) to sInp 
+        Move (Length(sInp)) to iMax
+        Move (ResizeArray(myCharArray,iMax+1)) to myCharArray
+        Move (AddressOf(myCharArray)) to pStr
+        Move (AddressOf(sInp)) to pStr        
+        
+        For iPos from 0 to (iMax-1) 
+            If (myCharArray[iPos]<>32) Function_Return (iPos+1)
+        Loop
+        
+        Function_Return 0 
+    End_Function
+    
+    Function StripIndentPoint String[] aLines Returns Integer 
+        Integer iPos 
+        Integer iMax 
+        Integer iStartPos
+        Integer iTest 
+        
+        Move 0 to iStartPos 
+        Move (SizeOfArray(aLines)) to iMax
+        For iPos from 0 to (iMax-1)
+            Move (LineStartPos(Self,aLines[iPos])) to iTest
+            If (iTest<>0) Begin
+                If ((iTest<iStartPos) or (iStartPos=0)) Move iTest to iStartPos
+            End 
+        Loop
+        
+        Function_Return iStartPos 
+    End_Function
+    
+    Function isNewCommand String sTest Returns Boolean 
+        Move (Trim(sTest)) to sTest 
+        Function_Return ((pos("@",sTest))<>0)
+    End_Function
+    
+    Enum_List 
+        Define C_Starting
+        Define C_command
+        Define C_Before_Param
+        Define C_Param
+        Define C_before_detail
+        Define C_detail  
+    End_Enum_List
+    
+    Function HasTitle String sType Returns Boolean 
+             If (sType="param")   Function_Return True 
+        Else If (sType="element") Function_Return True 
+        Else If (sType="error")   Function_Return True 
+        Else                      Function_Return False 
+    End_Function
+    
+    Function CreateCommand String sLine tDocumentCommand TempCommand Returns tDocumentCommand
+        Char[] myCharArray
+        Address pStr
+        Integer iMax 
+        Integer iPos 
+        String sChar 
+        Integer iParsing 
+        
+        If (not(isNewCommand(Self,sLine))) Begin 
+            Move sLine to TempCommand.sDesc
+            If (TempCommand.sType="") Move "detail" to TempCommand.sType
+            Function_Return TempCommand
+        End
+        
+        Move C_Starting to iParsing 
+        Move (Length(sLine)) to iMax
+        Move (ResizeArray(myCharArray,iMax+1)) to myCharArray
+        Move (AddressOf(myCharArray)) to pStr
+        Move (AddressOf(sLine)) to pStr        
+        
+        For iPos from 0 to (iMax-1) 
+            Move (Character(myCharArray[iPos])) to sChar
+            If (iParsing=C_Starting) Begin
+                Move "" to TempCommand.sElementName 
+                If (sChar="@") Begin 
+                    Move "" to TempCommand.sType
+                    Move C_command to iParsing 
+                End
+                Else If (sChar<>" ") Begin 
+                    Move sChar to TempCommand.sType 
+                    Move C_command to iParsing 
+                End
+            End
+            Else If (iParsing=C_Command) Begin 
+                If (sChar<>" ") Append TempCommand.sType sChar 
+                Else Begin 
+                    Move (Lowercase(TempCommand.sType)) to TempCommand.sType
+                    Move "" to TempCommand.sElementName
+                    If (HasTitle(Self,TempCommand.sType)) Move C_Before_Param to iParsing 
+                    Else Move C_before_detail to iParsing 
+                End
+            End
+            Else If (iParsing=C_Before_Param) Begin 
+                If ((pos(sChar," -.:=")) = 0) Begin 
+                    Move C_Param to iParsing 
+                    Move sChar to TempCommand.sElementName
+                End
+            End
+            Else If (iParsing=C_Param) Begin 
+                If ((pos(sChar," -.:=")) <> 0) Begin 
+                    Move C_Before_Detail to iParsing
+                End
+                Else Begin 
+                    Append TempCommand.sElementName sChar 
+                End
+            End
+            Else If (iParsing=C_Before_Detail) Begin 
+                If ((pos(sChar," -.:=")) = 0) Begin 
+                    Move C_Detail to iParsing 
+                    Move sChar to TempCommand.sDesc
+                End
+            End
+            Else If (iParsing=C_Detail) Begin 
+                Move (TempCommand.sDesc+sChar) to TempCommand.sDesc
+            End
+        Loop
+        
+        Function_Return TempCommand
+    End_Function
+    
+    Function FindDocumentCommand tDocumentCommand cmd1 tDocumentCommand cmd2 Returns Integer 
+        If (cmd1.sType > cmd2.sType) Function_Return (GT)
+        If (cmd1.sType < cmd2.sType) Function_Return (LT)
+
+        If (cmd1.sElementName > cmd2.sElementName) Function_Return (GT)
+        If (cmd1.sElementName < cmd2.sElementName) Function_Return (LT)
+        
+        Function_Return (EQ) 
+    End_Function
+    
+    //todo - this function could do with being a bit easier to read.
+    Function ParseImage String[] aLines Returns tDocumentCommand[]
+        Integer iCharStartPos
+        Integer iMax 
+        Integer iPos 
+        Integer iCommand 
+        tDocumentCommand[] aCommands
+        tDocumentCommand tmpCommand 
+        String sLine 
+        String sCRLF 
+        String sTmp
+                
+        Move ((Character(13))+(character(10))) to sCRLF
+        Move (StripIndentPoint(Self,aLines)) to iCharStartPos 
+
+        Move "detail" to tmpCommand.sType
+
+        Move (SizeOfArray(aLines)) to iMax
+        For iPos from 0 to (iMax-1)
+            Move aLines[iPos] to sLine 
+            If ((Trim(sLine))="") Move "" to sLine 
+            If ((Pos("//",sLine))<>0) Move (Mid(sLine,(length(sLine)),iCharStartPos)) to sLine
+            
+            Move (CreateCommand(Self,sLine,tmpCommand)) to tmpCommand 
+            Move (SearchArray(tmpCommand,aCommands,Self,get_FindDocumentCommand)) to iCommand 
+            
+            If (iCommand=-1) Move tmpCommand to aCommands[SizeOfArray(aCommands)]
+            Else Begin 
+                //Command line without description does not add blank line to text block 
+                If ((sLine="") or (tmpCommand.sDesc<>"")) Begin 
+                    Move aCommands[iCommand].sDesc to sTmp 
+                    If (sTmp<>"") Append sTmp sCRLF 
+                    Append sTmp tmpCommand.sDesc
+                    Move sTmp to aCommands[iCommand].sDesc
+                End
+            End
+        Loop
+        
+        Function_Return aCommands
+    End_Function
+    
+    Function isSearchOK String sTest String sInp Returns Boolean 
+        If (sTest="") Function_Return (True)
+        
+        Move (Lowercase(sInp)) to sInp 
+        Move (Lowercase(sTest)) to sTest
+        If (Pos(sInp,sTest)) Function_Return (True)  
+        
+        Function_Return (False) 
+    End_Function
+    
+    Function stripCodes tDocumentCommand[] aCommands String sType String sElement Returns tDocumentCommand[] 
+        tDocumentCommand[] aReturn 
+        Integer iMax
+        Integer iPos 
+        Boolean isLineOK 
+        
+        Move (SizeOfArray(aCommands)) to iMax 
+        For iPos from 0 to (iMax-1)
+            Move (True) to isLineOK 
+            If (not(isSearchOK(Self,sType,aCommands[iPos].sType))) Move (False) to isLineOK
+            If (not(isSearchOK(Self,sElement,aCommands[iPos].sElementName))) Move (False) to isLineOK
+            If (isLineOK) Move aCommands[iPos] to aReturn[SizeOfArray(aReturn)]
+        Loop
+        
+        Function_Return aReturn 
+    End_Function
+    
+    Function GenericDetail String sObject String sMethod String sType String sElement Returns String 
+        String[] aLines 
+        tDocumentCommand[] aCommands 
+        Integer iPos 
+        Integer iMax 
+        String sReturn 
+        String sCRLF 
+        
+        Move ((Character(10))+(Character(13))) to sCRLF 
+        
+        Get ImageText sObject sMethod to aLines 
+        Move (ParseImage(Self,aLines)) to aCommands 
+        Move (stripCodes(Self,aCommands,sType,sElement)) to aCommands
+        
+        Move (SizeOfArray(aCommands)) to iMax 
+        For iPos from 0 to (iMax-1) 
+            If (sReturn<>"") Append sReturn sCRLF
+            Append sReturn aCommands[iPos].sDesc
+        Loop
+        
+        Function_Return sReturn 
+    End_Function
+
+    Function MethodDescription String sObject String sMethod Returns String 
+        String sReturn 
+        Get GenericDetail sObject sMethod "detail" "" to sReturn 
+        Function_Return sReturn 
+    End_Function
+
+    Function ParameterDescription String sObject String sMethod String sParameter Returns String
+        String sReturn 
+        Get GenericDetail sObject sMethod "param" sParameter to sReturn
+        
+        Function_Return sReturn 
+    End_Function  
+    
+    Function ReturnDescription String sObject String sMethod Returns String
+        String sReturn 
+        Get GenericDetail sObject sMethod "returns" "" to sReturn
+        
+        Function_Return sReturn 
+    End_Function  
+    
+    Function ErrorDescription String sObject String sMethod String sError Returns String
+        String sReturn 
+        Get GenericDetail sObject sMethod "errors" sError to sReturn
+        
+        Function_Return sReturn 
+    End_Function  
+    
+    Function StructDescription String sStruct Returns String
+        String sReturn 
+        Get GenericDetail "struct" sStruct "" "" to sReturn
+        
+        Function_Return sReturn 
+    End_Function  
+    
+    Function StructElementDescription String sStruct String sElement Returns String
+        String sReturn 
+        Get GenericDetail "struct" sStruct "element" sElement to sReturn
+        
+        Function_Return sReturn 
+    End_Function 
+End_Object
